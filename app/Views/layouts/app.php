@@ -89,6 +89,15 @@
             color: #fff;
         }
         
+        /* Footer */
+        .app-footer {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #fff;
+            padding: 1rem;
+            background: var(--primary-color);
+        }
+        
         /* Bottom Bar (Hidden on desktop) */
         .bottom-bar {
             display: none;
@@ -482,6 +491,11 @@
         
         <?= $this->renderSection('content') ?>
     </main>
+    
+    <!-- Footer -->
+    <footer class="app-footer">
+        © <?= date('Y') ?> Bosowa Bandar Group. All rights reserved.
+    </footer>
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
