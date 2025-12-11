@@ -125,6 +125,25 @@ class DashboardController extends BaseController
         return $chartData;
     }
 
+    public function debug()
+    {
+        $year = date('Y');
+        $data = $this->realizationModel->getMonthlyTotalsByCompany($year);
+        
+        echo "<pre>";
+        echo "Monthly Totals for $year:\n";
+        print_r($data);
+        
+        // Also check raw data
+        $raw = $this->realizationModel
+            ->where('YEAR(date)', $year)
+            ->where('MONTH(date) IN (11, 12)')
+            ->findAll();
+        echo "\nRaw Nov/Dec data:\n";
+        print_r($raw);
+        echo "</pre>";
+    }
+
     private function getDailyTrendData($year, $month, $companies)
     {
         $dailyRealizations = $this->realizationModel->getDailyRealizations($year, $month);

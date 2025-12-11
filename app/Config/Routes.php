@@ -15,6 +15,7 @@ $routes->get('/logout', 'AuthController::logout');
 // Protected routes (require authentication)
 $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->get('/dashboard', 'DashboardController::index');
+    $routes->get('/dashboard/debug', 'DashboardController::debug');
     
     // Input Revenue (combined Target & Realisasi)
     $routes->get('/input', 'InputController::index');
