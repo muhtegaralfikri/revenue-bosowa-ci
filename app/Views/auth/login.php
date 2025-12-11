@@ -193,12 +193,96 @@
         }
         
         @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
             .auth-page__inner {
-                padding: 2rem;
+                padding: 1.5rem;
+                gap: 1.5rem;
+            }
+            
+            .auth-page__hero h1 {
+                font-size: 1.5rem;
+            }
+            
+            .subtitle {
+                font-size: 0.9rem;
+            }
+            
+            .hero-stats {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .hero-stats li {
+                padding: 0.75rem;
+            }
+            
+            .hero-stats .stat-value {
+                font-size: 1rem;
+            }
+            
+            .hero-stats .stat-desc {
+                font-size: 0.75rem;
             }
             
             .auth-card {
                 padding: 1.5rem;
+            }
+            
+            .auth-card h2 {
+                font-size: 1.4rem;
+            }
+            
+            .auth-card .card-subtitle {
+                font-size: 0.85rem;
+            }
+            
+            .form-field label {
+                font-size: 0.85rem;
+            }
+            
+            .form-field .form-control {
+                padding: 0.65rem 0.85rem;
+                font-size: 0.9rem;
+            }
+            
+            .btn-primary {
+                padding: 0.65rem 1rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            body {
+                padding: 0.75rem;
+            }
+            
+            .auth-page__inner {
+                padding: 1.25rem;
+                border-radius: 1rem;
+            }
+            
+            .eyebrow {
+                font-size: 0.65rem;
+            }
+            
+            .auth-page__hero h1 {
+                font-size: 1.3rem;
+            }
+            
+            .auth-card {
+                padding: 1.25rem;
+                border-radius: 0.85rem;
+            }
+            
+            .auth-card h2 {
+                font-size: 1.25rem;
+            }
+            
+            .help-text {
+                font-size: 0.8rem;
+                text-align: center;
             }
         }
     </style>

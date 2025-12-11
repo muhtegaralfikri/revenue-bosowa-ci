@@ -225,11 +225,37 @@
             .summary-cards {
                 grid-template-columns: repeat(2, 1fr);
             }
+            
+            .chart-wrapper {
+                height: 240px;
+            }
         }
         
         @media (max-width: 768px) {
             .navbar-shell {
                 padding: 0 1rem;
+                height: auto;
+                min-height: 60px;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding-top: 0.75rem;
+                padding-bottom: 0.75rem;
+            }
+            
+            .brand {
+                height: 32px;
+            }
+            
+            .nav-menu {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.25rem;
+            }
+            
+            .nav-menu a {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.8rem;
             }
             
             .main-content {
@@ -238,6 +264,23 @@
             
             .summary-cards {
                 grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            
+            .summary-card .card-body {
+                padding: 1rem;
+            }
+            
+            .summary-card .company-title {
+                font-size: 0.85rem;
+            }
+            
+            .summary-card .realisasi-value {
+                font-size: 1.1rem;
+            }
+            
+            .summary-card .today-info {
+                font-size: 0.8rem;
             }
             
             .filter-section {
@@ -251,6 +294,91 @@
             
             .filter-item select {
                 flex: 1;
+            }
+            
+            .chart-card .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .chart-card .card-header .card-title {
+                font-size: 0.9rem;
+            }
+            
+            .company-filter {
+                width: 100%;
+            }
+            
+            .chart-wrapper {
+                height: 220px;
+            }
+            
+            /* Table responsive */
+            .table th, .table td {
+                font-size: 0.85rem;
+                padding: 0.75rem 0.5rem;
+            }
+            
+            .table .px-4 {
+                padding-left: 0.75rem !important;
+                padding-right: 0.75rem !important;
+            }
+            
+            .table .pe-4 {
+                padding-right: 0.75rem !important;
+            }
+            
+            /* Page headers */
+            .d-flex.justify-content-between {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch !important;
+            }
+            
+            .d-flex.justify-content-between .d-flex.gap-2 {
+                flex-wrap: wrap;
+            }
+            
+            .d-flex.justify-content-between .btn {
+                flex: 1;
+                min-width: 120px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 0.75rem;
+            }
+            
+            .card {
+                border-radius: 6px;
+            }
+            
+            .summary-card .realisasi-value {
+                font-size: 1rem;
+            }
+            
+            .chart-wrapper {
+                height: 200px;
+            }
+            
+            .filter-item label {
+                font-size: 0.85rem;
+            }
+            
+            .filter-item select {
+                font-size: 0.85rem;
+                padding: 0.4rem 1.5rem 0.4rem 0.5rem;
+            }
+            
+            h4 {
+                font-size: 1.1rem;
+            }
+            
+            /* Hide some table columns on very small screens */
+            .table .d-none-xs {
+                display: none;
             }
         }
     </style>
