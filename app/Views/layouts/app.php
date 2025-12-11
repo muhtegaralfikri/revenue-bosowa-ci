@@ -38,10 +38,16 @@
             box-sizing: border-box;
         }
         
+        html {
+            height: 100%;
+        }
+        
         body {
             font-family: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: var(--surface-100);
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         
         /* Navbar */
@@ -96,6 +102,8 @@
             color: #fff;
             padding: 1rem;
             background: var(--primary-color);
+            margin-top: auto;
+            flex-shrink: 0;
         }
         
         /* Bottom Bar (Hidden on desktop) */
@@ -108,6 +116,7 @@
             padding: 1.5rem;
             max-width: 1400px;
             margin: 0 auto;
+            flex: 1;
         }
         
         /* Cards */
