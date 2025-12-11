@@ -410,17 +410,22 @@ class GoogleSheetsService
         $result['debug']['firstRows'] = $firstRows;
 
         // Find Rupiah section start - check both column A and B
+        // Search up to 100 rows because Rupiah might be after many quantity rows
         $dataStartRow = $columnHeaderRow + 1;
-        for ($i = $columnHeaderRow + 1; $i < min(30, count($data)); $i++) {
+        $rupiahFound = false;
+        for ($i = $columnHeaderRow + 1; $i < min(100, count($data)); $i++) {
             $row = $data[$i];
             if (!$row) continue;
             $cellA = strtolower(trim($row[0] ?? ''));
             $cellB = strtolower(trim($row[1] ?? ''));
             if (strpos($cellA, 'rupiah') !== false || strpos($cellB, 'rupiah') !== false) {
                 $dataStartRow = $i + 1;
+                $rupiahFound = true;
+                $result['debug']['rupiahFoundAt'] = $i;
                 break;
             }
         }
+        $result['debug']['rupiahFound'] = $rupiahFound;
         $result['debug']['dataStartRow'] = $dataStartRow;
 
         // Get companies
