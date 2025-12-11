@@ -37,7 +37,10 @@
     ?>
         <div class="card summary-card">
             <div class="card-body">
-                <div class="company-title"><?= $data['company']['name'] ?></div>
+                <div class="company-title">
+                    <span class="company-name-full"><?= $data['company']['name'] ?></span>
+                    <span class="company-name-short"><?= $data['company']['code'] ?></span>
+                </div>
                 <div class="realisasi-value <?= $colorClass ?>">
                     Rp <?= number_format($data['realization'], 0, ',', '.') ?>
                 </div>

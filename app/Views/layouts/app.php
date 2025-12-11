@@ -130,6 +130,10 @@
             margin-bottom: 0.75rem;
         }
         
+        .summary-card .company-name-short {
+            display: none;
+        }
+        
         .summary-card .realisasi-value {
             font-size: 1.25rem;
             font-weight: 700;
@@ -272,7 +276,15 @@
             }
             
             .summary-card .company-title {
-                font-size: 0.85rem;
+                font-size: 0.9rem;
+            }
+            
+            .summary-card .company-name-full {
+                display: none;
+            }
+            
+            .summary-card .company-name-short {
+                display: inline;
             }
             
             .summary-card .realisasi-value {
