@@ -10,30 +10,30 @@
     
     .input-card {
         width: 100%;
-        max-width: 600px;
+        max-width: 500px;
     }
     
     .input-card .card-header {
         background: transparent;
         border-bottom: 1px solid var(--surface-100);
-        padding: 1.5rem;
+        padding: 1.25rem;
     }
     
     .input-card .card-title {
-        font-size: 1.35rem;
+        font-size: 1.25rem;
         font-weight: 600;
         color: var(--surface-900);
         margin: 0;
     }
     
     .input-card .card-body {
-        padding: 1.5rem;
+        padding: 1.25rem;
     }
     
     .form-grid {
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
+        gap: 1rem;
     }
     
     .form-field {
@@ -45,15 +45,15 @@
     .form-field label {
         font-weight: 600;
         color: var(--surface-700);
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
     
     .form-field .form-control,
     .form-field .form-select {
-        padding: 0.85rem 1rem;
+        padding: 0.75rem 1rem;
         border: 1px solid var(--surface-200);
         border-radius: 6px;
-        font-size: 1rem;
+        font-size: 0.95rem;
         transition: border-color 0.2s, box-shadow 0.2s;
     }
     
@@ -70,8 +70,8 @@
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        padding: 1rem 1.25rem;
-        font-size: 1.05rem;
+        padding: 0.85rem 1.25rem;
+        font-size: 1rem;
         font-weight: 600;
         color: #fff;
         background-color: #10B981;
@@ -79,7 +79,7 @@
         border-radius: 6px;
         cursor: pointer;
         transition: background-color 0.2s;
-        margin-top: 0.75rem;
+        margin-top: 0.5rem;
     }
     
     .submit-btn:hover {
