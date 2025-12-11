@@ -5,14 +5,12 @@ namespace App\Libraries;
 use Config\GoogleSheets;
 use App\Models\CompanyModel;
 use App\Models\RevenueRealizationModel;
-use Google\Client;
-use Google\Service\Sheets;
+use Firebase\JWT\JWT;
 
 class GoogleSheetsService
 {
     protected $config;
-    protected $client;
-    protected $service;
+    protected $accessToken;
     protected $companyModel;
     protected $realizationModel;
     
@@ -49,15 +47,75 @@ class GoogleSheetsService
         }
 
         try {
-            $this->client = new Client();
-            $this->client->setAuthConfig($this->config->credentialsFile);
-            $this->client->setScopes([Sheets::SPREADSHEETS_READONLY]);
-            $this->service = new Sheets($this->client);
-            return true;
+            $this->accessToken = $this->getAccessToken();
+            return !empty($this->accessToken);
         } catch (\Exception $e) {
             log_message('error', 'Failed to initialize Google Sheets: ' . $e->getMessage());
             return false;
         }
+    }
+
+    protected function getAccessToken(): string
+    {
+        $credentials = json_decode(file_get_contents($this->config->credentialsFile), true);
+        
+        $now = time();
+        $payload = [
+            'iss' => $credentials['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/spreadsheets.readonly',
+            'aud' => 'https://oauth2.googleapis.com/token',
+            'iat' => $now,
+            'exp' => $now + 3600,
+        ];
+
+        $jwt = JWT::encode($payload, $credentials['private_key'], 'RS256');
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => 'https://oauth2.googleapis.com/token',
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query([
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion' => $jwt,
+            ]),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            throw new \Exception('Failed to get access token: ' . $response);
+        }
+
+        $data = json_decode($response, true);
+        return $data['access_token'] ?? '';
+    }
+
+    protected function apiRequest(string $endpoint): ?array
+    {
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $endpoint,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $this->accessToken,
+                'Accept: application/json',
+            ],
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            log_message('error', "API request failed ({$httpCode}): {$response}");
+            return null;
+        }
+
+        return json_decode($response, true);
     }
 
     public function syncAll(): array
@@ -74,16 +132,21 @@ class GoogleSheetsService
         }
 
         try {
-            // Get all sheets in the spreadsheet
-            $spreadsheet = $this->service->spreadsheets->get($this->config->spreadsheetId);
-            $sheets = $spreadsheet->getSheets();
+            // Get spreadsheet info
+            $spreadsheetUrl = "https://sheets.googleapis.com/v4/spreadsheets/{$this->config->spreadsheetId}";
+            $spreadsheet = $this->apiRequest($spreadsheetUrl);
+
+            if (!$spreadsheet || !isset($spreadsheet['sheets'])) {
+                $results['message'] = 'Failed to get spreadsheet info';
+                return $results;
+            }
 
             // Clear old Google Sheets data before sync
             $this->clearOldGoogleSheetsData();
 
             $totalImported = 0;
-            foreach ($sheets as $sheet) {
-                $sheetTitle = $sheet->getProperties()->getTitle();
+            foreach ($spreadsheet['sheets'] as $sheet) {
+                $sheetTitle = $sheet['properties']['title'] ?? '';
                 $company = $this->matchCompanyBySheetTitle($sheetTitle);
                 
                 if ($company) {
@@ -129,18 +192,17 @@ class GoogleSheetsService
     protected function syncSheet(string $sheetTitle, array $company): int
     {
         try {
-            $range = "'{$sheetTitle}'!A1:ZZ1000";
-            $response = $this->service->spreadsheets_values->get(
-                $this->config->spreadsheetId,
-                $range
-            );
-            $values = $response->getValues();
+            $encodedTitle = urlencode($sheetTitle);
+            $range = "{$encodedTitle}!A1:ZZ1000";
+            $url = "https://sheets.googleapis.com/v4/spreadsheets/{$this->config->spreadsheetId}/values/{$range}";
+            
+            $response = $this->apiRequest($url);
 
-            if (empty($values)) {
+            if (!$response || !isset($response['values'])) {
                 return 0;
             }
 
-            return $this->parseAndImportData($values, $company);
+            return $this->parseAndImportData($response['values'], $company);
         } catch (\Exception $e) {
             log_message('error', "Error syncing sheet {$sheetTitle}: " . $e->getMessage());
             return 0;
