@@ -110,12 +110,14 @@ class GoogleSheetsService
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
+        $data = json_decode($response, true);
+
         if ($httpCode !== 200) {
             log_message('error', "API request failed ({$httpCode}): {$response}");
-            return null;
+            return $data; // Return error data for better error messages
         }
 
-        return json_decode($response, true);
+        return $data;
     }
 
     public function syncAll(): array
@@ -127,7 +129,7 @@ class GoogleSheetsService
         ];
 
         if (!$this->initialize()) {
-            $results['message'] = 'Failed to initialize Google Sheets service';
+            $results['message'] = 'Failed to initialize Google Sheets service. Check credentials file.';
             return $results;
         }
 
@@ -137,7 +139,8 @@ class GoogleSheetsService
             $spreadsheet = $this->apiRequest($spreadsheetUrl);
 
             if (!$spreadsheet || !isset($spreadsheet['sheets'])) {
-                $results['message'] = 'Failed to get spreadsheet info';
+                $errorMsg = $spreadsheet['error']['message'] ?? 'Unknown error';
+                $results['message'] = "Failed to get spreadsheet info: {$errorMsg}. Make sure spreadsheet is shared with service account.";
                 return $results;
             }
 
