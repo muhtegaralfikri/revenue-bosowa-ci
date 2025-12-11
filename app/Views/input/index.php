@@ -70,7 +70,7 @@
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        padding: 0.85rem 1.25rem;
+        padding: 0.75rem 1.25rem;
         font-size: 1rem;
         font-weight: 600;
         color: #fff;
