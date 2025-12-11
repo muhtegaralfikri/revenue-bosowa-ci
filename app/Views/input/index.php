@@ -10,50 +10,50 @@
     
     .input-card {
         width: 100%;
-        max-width: 550px;
+        max-width: 700px;
     }
     
     .input-card .card-header {
         background: transparent;
         border-bottom: 1px solid var(--surface-100);
-        padding: 1.25rem;
+        padding: 1.25rem 2rem;
     }
     
     .input-card .card-title {
-        font-size: 1.25rem;
+        font-size: 1.35rem;
         font-weight: 600;
         color: var(--surface-900);
         margin: 0;
     }
     
     .input-card .card-body {
-        padding: 1.25rem;
+        padding: 1.5rem 2rem;
     }
     
     .form-grid {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 1.25rem;
     }
     
     .form-field {
         display: flex;
         flex-direction: column;
-        gap: 0.35rem;
+        gap: 0.5rem;
     }
     
     .form-field label {
         font-weight: 600;
         color: var(--surface-700);
-        font-size: 0.9rem;
+        font-size: 0.95rem;
     }
     
     .form-field .form-control,
     .form-field .form-select {
-        padding: 0.75rem 1rem;
+        padding: 0.85rem 1rem;
         border: 1px solid var(--surface-200);
         border-radius: 6px;
-        font-size: 0.95rem;
+        font-size: 1rem;
         transition: border-color 0.2s, box-shadow 0.2s;
     }
     
