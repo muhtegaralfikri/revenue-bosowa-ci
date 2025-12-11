@@ -89,6 +89,11 @@
             color: #fff;
         }
         
+        /* Bottom Bar (Hidden on desktop) */
+        .bottom-bar {
+            display: none;
+        }
+        
         /* Main Content */
         .main-content {
             padding: 1.5rem;
@@ -238,32 +243,62 @@
         @media (max-width: 768px) {
             .navbar-shell {
                 padding: 0 1rem;
-                height: auto;
-                min-height: 60px;
-                flex-wrap: wrap;
-                gap: 0.5rem;
-                padding-top: 0.75rem;
-                padding-bottom: 0.75rem;
+                height: 56px;
+                justify-content: center;
             }
             
             .brand {
                 height: 32px;
             }
             
-            .nav-menu {
-                width: 100%;
-                justify-content: center;
-                flex-wrap: wrap;
-                gap: 0.25rem;
+            /* Hide desktop menu on mobile */
+            .desktop-menu {
+                display: none;
             }
             
-            .nav-menu a {
-                padding: 0.4rem 0.75rem;
-                font-size: 0.8rem;
+            /* Show bottom bar on mobile */
+            .bottom-bar {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: #fff;
+                border-top: 1px solid var(--surface-200);
+                padding: 0.5rem 0;
+                z-index: 1000;
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            }
+            
+            .bottom-bar-item {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-decoration: none;
+                color: var(--surface-500);
+                font-size: 0.7rem;
+                padding: 0.25rem;
+                transition: color 0.2s;
+            }
+            
+            .bottom-bar-item i {
+                font-size: 1.25rem;
+                margin-bottom: 0.15rem;
+            }
+            
+            .bottom-bar-item.active {
+                color: var(--primary-color);
+            }
+            
+            .bottom-bar-item:hover {
+                color: var(--primary-color);
             }
             
             .main-content {
                 padding: 1rem;
+                padding-bottom: 5rem; /* Space for bottom bar */
             }
             
             .summary-cards {
@@ -398,19 +433,39 @@
     <?= $this->renderSection('styles') ?>
 </head>
 <body>
-    <!-- Navbar -->
+    <!-- Navbar (Desktop) -->
     <header class="navbar-shell">
         <a href="/dashboard" class="brand">
             <img src="/assets/images/logo.png" alt="Bosowa" class="brand-logo">
         </a>
         
-        <nav class="nav-menu">
+        <nav class="nav-menu desktop-menu">
             <a href="/dashboard" class="<?= uri_string() == 'dashboard' ? 'active' : '' ?>">Beranda</a>
             <a href="/targets" class="<?= str_starts_with(uri_string(), 'targets') ? 'active' : '' ?>">Target</a>
             <a href="/realizations" class="<?= str_starts_with(uri_string(), 'realizations') ? 'active' : '' ?>">Realisasi</a>
             <a href="/logout">Log Out</a>
         </nav>
     </header>
+    
+    <!-- Bottom Bar (Mobile) -->
+    <nav class="bottom-bar">
+        <a href="/dashboard" class="bottom-bar-item <?= uri_string() == 'dashboard' ? 'active' : '' ?>">
+            <i class="bi bi-house"></i>
+            <span>Beranda</span>
+        </a>
+        <a href="/targets" class="bottom-bar-item <?= str_starts_with(uri_string(), 'targets') ? 'active' : '' ?>">
+            <i class="bi bi-bullseye"></i>
+            <span>Target</span>
+        </a>
+        <a href="/realizations" class="bottom-bar-item <?= str_starts_with(uri_string(), 'realizations') ? 'active' : '' ?>">
+            <i class="bi bi-cash-stack"></i>
+            <span>Realisasi</span>
+        </a>
+        <a href="/logout" class="bottom-bar-item">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Keluar</span>
+        </a>
+    </nav>
     
     <!-- Main Content -->
     <main class="main-content">
