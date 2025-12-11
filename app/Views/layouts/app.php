@@ -137,17 +137,17 @@
         .slide-menu {
             position: fixed;
             top: 0;
-            left: -280px;
+            right: -280px;
             width: 280px;
             height: 100%;
             background: #fff;
             z-index: 1001;
-            transition: left 0.3s ease;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
         }
         
         .slide-menu.active {
-            left: 0;
+            right: 0;
         }
         
         .slide-menu-header {
@@ -194,7 +194,7 @@
         .slide-menu-nav a.active {
             background: var(--surface-100);
             color: var(--primary-color);
-            border-left: 3px solid var(--primary-color);
+            border-right: 3px solid var(--primary-color);
         }
         
         .slide-menu-nav a i {
