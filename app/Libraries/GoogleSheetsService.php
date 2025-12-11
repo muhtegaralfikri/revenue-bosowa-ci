@@ -153,13 +153,32 @@ class GoogleSheetsService
             $sheetNames = $spreadsheet->getSheetNames();
             $results['details']['sheets'] = $sheetNames;
             
+            // Get companies for sheet matching
+            $companies = $this->companyModel->getActiveCompanies();
+            $companyMap = [];
+            foreach ($companies as $company) {
+                $companyMap[strtoupper($company['code'])] = $company;
+            }
+            
             foreach ($sheetNames as $sheetName) {
-                // Find REVENUE sheet
-                if (stripos($sheetName, 'REVENUE') !== false) {
+                $sheetNameUpper = strtoupper($sheetName);
+                
+                // Check if this is a company-specific sheet (BBI, BBA, JAPELIN)
+                $matchedCompany = null;
+                foreach ($companyMap as $code => $company) {
+                    if ($sheetNameUpper === $code) {
+                        $matchedCompany = $company;
+                        break;
+                    }
+                }
+                
+                if ($matchedCompany) {
+                    // Process company-specific sheet
                     $worksheet = $spreadsheet->getSheetByName($sheetName);
-                    $parseResult = $this->parseRevenueSheet($worksheet);
+                    $parseResult = $this->parseCompanySheet($worksheet, $matchedCompany);
                     $results['details'][] = [
                         'sheet' => $sheetName,
+                        'company' => $matchedCompany['code'],
                         'imported' => $parseResult['count'],
                         'debug' => $parseResult['debug'] ?? [],
                     ];
@@ -183,6 +202,140 @@ class GoogleSheetsService
     protected function clearOldGoogleSheetsData(): void
     {
         $this->realizationModel->where('description', 'Google Sheets Sync')->delete();
+    }
+
+    protected function parseCompanySheet($worksheet, array $company): array
+    {
+        $result = ['count' => 0, 'debug' => []];
+        $data = $worksheet->toArray();
+        
+        // Find header rows
+        $monthHeaderRow = -1;
+        $columnHeaderRow = -1;
+        
+        for ($i = 0; $i < min(15, count($data)); $i++) {
+            $row = $data[$i];
+            if (!$row) continue;
+            
+            $rowStr = strtoupper(implode(' ', array_filter($row)));
+            
+            // Check for month names
+            foreach (array_merge($this->monthNames, $this->monthNamesEng) as $month) {
+                if (strpos($rowStr, $month) !== false) {
+                    $monthHeaderRow = $i;
+                    break;
+                }
+            }
+            
+            // Check for REALISASI
+            if (strpos($rowStr, 'REALISASI') !== false) {
+                $columnHeaderRow = $i;
+            }
+        }
+
+        $result['debug']['monthHeaderRow'] = $monthHeaderRow;
+        $result['debug']['columnHeaderRow'] = $columnHeaderRow;
+
+        if ($monthHeaderRow === -1 || $columnHeaderRow === -1) {
+            $result['debug']['error'] = 'Could not find month/column headers';
+            return $result;
+        }
+
+        // Map REALISASI columns to months
+        $monthRow = $data[$monthHeaderRow];
+        $colHeaderRow = $data[$columnHeaderRow];
+        $monthColumns = [];
+        $mappedMonths = [];
+        $currentYear = (int) date('Y');
+
+        for ($col = 0; $col < count($colHeaderRow); $col++) {
+            $colHeader = strtoupper(trim($colHeaderRow[$col] ?? ''));
+            
+            if ($colHeader === 'REALISASI') {
+                for ($searchCol = $col; $searchCol >= 0; $searchCol--) {
+                    $cell = strtoupper(trim($monthRow[$searchCol] ?? ''));
+                    
+                    $monthIdx = $this->findMonthIndex($cell, $this->monthNames);
+                    if ($monthIdx === -1) {
+                        $monthIdx = $this->findMonthIndex($cell, $this->monthNamesEng);
+                    }
+                    
+                    if ($monthIdx !== -1) {
+                        $monthNum = $monthIdx + 1;
+                        if (!isset($mappedMonths[$monthNum])) {
+                            $mappedMonths[$monthNum] = true;
+                            $monthColumns[] = ['month' => $monthNum, 'year' => $currentYear, 'colIndex' => $col];
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        $result['debug']['monthColumns'] = count($monthColumns);
+
+        if (empty($monthColumns)) {
+            $result['debug']['error'] = 'No REALISASI columns mapped to months';
+            return $result;
+        }
+
+        // Find Rupiah section start
+        $dataStartRow = $columnHeaderRow + 1;
+        for ($i = $columnHeaderRow + 1; $i < count($data); $i++) {
+            $row = $data[$i];
+            if (!$row) continue;
+            $firstCell = strtolower(trim($row[0] ?? ''));
+            if (strpos($firstCell, 'rupiah') !== false) {
+                $dataStartRow = $i + 1;
+                break;
+            }
+        }
+        $result['debug']['dataStartRow'] = $dataStartRow;
+
+        // Aggregate all amounts by month for this company
+        $aggregated = [];
+
+        for ($i = $dataStartRow; $i < count($data); $i++) {
+            $row = $data[$i];
+            if (!$row || empty($row[0])) continue;
+            
+            $itemName = strtoupper(trim($row[0]));
+            
+            // Skip total rows and empty
+            if (strpos($itemName, 'TOTAL') !== false) continue;
+            if (empty($itemName)) continue;
+
+            foreach ($monthColumns as $mc) {
+                $cellValue = $row[$mc['colIndex']] ?? null;
+                $amount = $this->parseAmount($cellValue);
+                if ($amount <= 0) continue;
+
+                $key = "{$mc['year']}-{$mc['month']}";
+                if (!isset($aggregated[$key])) {
+                    $aggregated[$key] = 0;
+                }
+                $aggregated[$key] += $amount;
+            }
+        }
+
+        $result['debug']['aggregatedMonths'] = array_keys($aggregated);
+
+        // Save aggregated data
+        foreach ($aggregated as $key => $totalAmount) {
+            list($year, $month) = explode('-', $key);
+
+            $entryDate = sprintf('%04d-%02d-01', $year, $month);
+
+            $this->realizationModel->insert([
+                'company_id' => $company['id'],
+                'date' => $entryDate,
+                'amount' => $totalAmount,
+                'description' => 'Google Sheets Sync',
+            ]);
+            $result['count']++;
+        }
+
+        return $result;
     }
 
     protected function parseRevenueSheet($worksheet): array
