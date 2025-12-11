@@ -400,17 +400,23 @@ class GoogleSheetsService
         $firstRows = [];
         for ($x = 0; $x < min(10, count($data)); $x++) {
             $r = $data[$x] ?? [];
-            $firstRows[$x] = substr(trim($r[0] ?? '(empty)'), 0, 40);
+            // Show first 3 columns
+            $cols = [];
+            for ($c = 0; $c < min(3, count($r)); $c++) {
+                $cols[] = substr(trim($r[$c] ?? ''), 0, 25);
+            }
+            $firstRows[$x] = implode(' | ', $cols);
         }
         $result['debug']['firstRows'] = $firstRows;
 
-        // Find Rupiah section start
+        // Find Rupiah section start - check both column A and B
         $dataStartRow = $columnHeaderRow + 1;
         for ($i = $columnHeaderRow + 1; $i < min(30, count($data)); $i++) {
             $row = $data[$i];
             if (!$row) continue;
-            $firstCell = strtolower(trim($row[0] ?? ''));
-            if (strpos($firstCell, 'rupiah') !== false) {
+            $cellA = strtolower(trim($row[0] ?? ''));
+            $cellB = strtolower(trim($row[1] ?? ''));
+            if (strpos($cellA, 'rupiah') !== false || strpos($cellB, 'rupiah') !== false) {
                 $dataStartRow = $i + 1;
                 break;
             }
@@ -433,9 +439,17 @@ class GoogleSheetsService
 
         for ($i = $dataStartRow; $i < count($data); $i++) {
             $row = $data[$i];
-            if (!$row || empty($row[0])) continue;
+            if (!$row) continue;
             
-            $itemName = strtoupper(trim($row[0]));
+            // Try column B (index 1) first, then column A (index 0) - Excel often has data in col B
+            $itemName = '';
+            if (!empty($row[1])) {
+                $itemName = strtoupper(trim($row[1]));
+            } elseif (!empty($row[0])) {
+                $itemName = strtoupper(trim($row[0]));
+            }
+            
+            if (empty($itemName)) continue;
             
             // Skip total rows
             if (strpos($itemName, 'TOTAL') !== false) continue;
