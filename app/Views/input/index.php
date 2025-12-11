@@ -151,9 +151,7 @@
                     <select class="form-select" id="company_id" name="company_id" required>
                         <option value="">Pilih Entity</option>
                         <?php foreach ($companies as $company): ?>
-                            <option value="<?= $company['id'] ?>">
-                                <span class="d-none d-sm-inline"><?= $company['name'] ?></span>
-                                <span class="d-inline d-sm-none"><?= $company['code'] ?></span>
+                            <option value="<?= $company['id'] ?>" data-code="<?= $company['code'] ?>" data-name="<?= $company['name'] ?>">
                                 <?= $company['name'] ?>
                             </option>
                         <?php endforeach; ?>
