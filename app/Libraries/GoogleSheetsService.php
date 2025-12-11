@@ -507,6 +507,15 @@ class GoogleSheetsService
         $result['debug']['matchedRows'] = $matchedRows;
         $result['debug']['skippedRows'] = $skippedRows;
         $result['debug']['aggregatedKeys'] = array_keys($aggregated);
+        
+        // Show aggregated totals for Nov and Dec
+        $novDec = [];
+        foreach ($aggregated as $key => $total) {
+            if (strpos($key, '-11') !== false || strpos($key, '-12') !== false) {
+                $novDec[$key] = number_format($total, 0, ',', '.');
+            }
+        }
+        $result['debug']['novDecTotals'] = $novDec;
 
         // Save aggregated data
         foreach ($aggregated as $key => $totalAmount) {
