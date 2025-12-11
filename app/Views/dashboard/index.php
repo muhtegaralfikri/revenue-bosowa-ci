@@ -2,119 +2,89 @@
 
 <?= $this->section('content') ?>
 
-<!-- Page Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-1">Dashboard</h4>
-        <p class="text-muted mb-0">Monitoring realisasi pendapatan Bosowa Bandar Group</p>
-    </div>
-    
-    <!-- Filter -->
-    <form class="d-flex gap-2" method="get">
-        <select name="month" class="form-select" style="width: auto;">
+<!-- Filter Section -->
+<div class="filter-section">
+    <div class="filter-item">
+        <label>Bulan:</label>
+        <select id="filterMonth" onchange="applyFilter()">
             <?php foreach ($months as $num => $name): ?>
                 <option value="<?= $num ?>" <?= $month == $num ? 'selected' : '' ?>><?= $name ?></option>
             <?php endforeach; ?>
         </select>
-        <select name="year" class="form-select" style="width: auto;">
+    </div>
+    <div class="filter-item">
+        <label>Tahun:</label>
+        <select id="filterYear" onchange="applyFilter()">
             <?php foreach ($years as $y): ?>
                 <option value="<?= $y ?>" <?= $year == $y ? 'selected' : '' ?>><?= $y ?></option>
             <?php endforeach; ?>
         </select>
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-funnel"></i> Filter
-        </button>
-    </form>
+    </div>
 </div>
 
 <!-- Summary Cards -->
-<div class="row g-3 mb-4">
-    <?php foreach ($summaryData as $data): ?>
-        <?php 
-            $companyClass = strtolower($data['company']['code']);
-            $percentClass = $data['percentage'] >= 100 ? 'success' : ($data['percentage'] >= 50 ? 'warning' : 'danger');
-        ?>
-        <div class="col-md-4">
-            <div class="card stat-card <?= $percentClass ?>">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <span class="company-badge company-<?= $companyClass ?>"><?= $data['company']['code'] ?></span>
-                        <span class="badge bg-<?= $percentClass ?>"><?= number_format($data['percentage'], 1) ?>%</span>
-                    </div>
-                    <h5 class="card-title mb-1"><?= $data['company']['name'] ?></h5>
-                    <div class="stat-value">Rp <?= number_format($data['realization'], 0, ',', '.') ?></div>
-                    <div class="stat-label">Target: Rp <?= number_format($data['target'], 0, ',', '.') ?></div>
-                    <div class="progress mt-2">
-                        <div class="progress-bar bg-<?= $percentClass ?>" style="width: <?= min($data['percentage'], 100) ?>%"></div>
-                    </div>
+<div class="summary-cards">
+    <?php 
+    $colorClasses = [
+        'BBI' => 'text-blue',
+        'BBA' => 'text-green',
+        'JAPELIN' => 'text-orange'
+    ];
+    foreach ($summaryData as $data): 
+        $colorClass = $colorClasses[$data['company']['code']] ?? 'text-blue';
+        $percentClass = $data['percentage'] >= 100 ? 'up' : 'down';
+        $percentIcon = $data['percentage'] >= 100 ? 'bi-arrow-up' : 'bi-arrow-down';
+    ?>
+        <div class="card summary-card">
+            <div class="card-body">
+                <div class="company-title"><?= $data['company']['name'] ?></div>
+                <div class="realisasi-value <?= $colorClass ?>">
+                    Rp <?= number_format($data['realization'], 0, ',', '.') ?>
+                </div>
+                <div class="today-info">
+                    <span>Bulan ini:</span>
+                    <span class="percentage <?= $percentClass ?>">
+                        <?= number_format($data['percentage'], 1) ?>%
+                    </span>
+                    <i class="bi <?= $percentIcon ?> percentage <?= $percentClass ?>"></i>
                 </div>
             </div>
         </div>
     <?php endforeach; ?>
 </div>
 
-<!-- Total Summary -->
-<div class="row g-3 mb-4">
+<!-- Charts Section -->
+<div class="row">
+    <!-- Daily Trend Chart -->
     <div class="col-12">
-        <div class="card">
+        <div class="card chart-card">
+            <div class="card-header">
+                <span class="card-title">Tren Realisasi Harian</span>
+            </div>
             <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-4 text-center border-end">
-                        <div class="stat-label">Total Target</div>
-                        <div class="stat-value text-primary">Rp <?= number_format($totalTarget, 0, ',', '.') ?></div>
-                    </div>
-                    <div class="col-md-4 text-center border-end">
-                        <div class="stat-label">Total Realisasi</div>
-                        <div class="stat-value text-success">Rp <?= number_format($totalRealization, 0, ',', '.') ?></div>
-                    </div>
-                    <div class="col-md-4 text-center">
-                        <div class="stat-label">Persentase</div>
-                        <div class="stat-value <?= $totalPercentage >= 100 ? 'text-success' : ($totalPercentage >= 50 ? 'text-warning' : 'text-danger') ?>">
-                            <?= number_format($totalPercentage, 1) ?>%
-                        </div>
-                    </div>
+                <div class="chart-wrapper">
+                    <canvas id="dailyChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-<!-- Charts -->
-<div class="row g-3">
-    <!-- Daily Trend -->
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <i class="bi bi-graph-up me-2"></i>Tren Realisasi Harian - <?= $months[$month] ?> <?= $year ?>
-            </div>
-            <div class="card-body">
-                <canvas id="dailyChart" height="100"></canvas>
-            </div>
-        </div>
-    </div>
     
-    <!-- Monthly Comparison -->
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header">
-                <i class="bi bi-bar-chart me-2"></i>Perbandingan Target vs Realisasi
-            </div>
-            <div class="card-body">
-                <canvas id="comparisonChart" height="200"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Monthly Chart -->
-<div class="row g-3 mt-3">
+    <!-- Comparison Chart -->
     <div class="col-12">
-        <div class="card">
+        <div class="card chart-card">
             <div class="card-header">
-                <i class="bi bi-calendar3 me-2"></i>Realisasi Bulanan <?= $year ?>
+                <span class="card-title">Perbandingan Target vs Realisasi (<?= $year ?>)</span>
+                <select id="companyFilter" class="form-select company-filter" onchange="updateComparisonChart()">
+                    <option value="">Semua Entity</option>
+                    <?php foreach ($companies as $company): ?>
+                        <option value="<?= $company['code'] ?>"><?= $company['name'] ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
             <div class="card-body">
-                <canvas id="monthlyChart" height="80"></canvas>
+                <div class="chart-wrapper">
+                    <canvas id="comparisonChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -124,76 +94,168 @@
 
 <?= $this->section('scripts') ?>
 <script>
+// Filter function
+function applyFilter() {
+    const month = document.getElementById('filterMonth').value;
+    const year = document.getElementById('filterYear').value;
+    window.location.href = `/dashboard?month=${month}&year=${year}`;
+}
+
 // Daily Trend Chart
 const dailyCtx = document.getElementById('dailyChart').getContext('2d');
-new Chart(dailyCtx, {
-    type: 'line',
-    data: <?= json_encode($dailyData) ?>,
-    options: {
-        responsive: true,
-        plugins: {
-            legend: {
-                position: 'top',
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function(value) {
-                        return 'Rp ' + (value / 1000000).toFixed(0) + ' Jt';
-                    }
-                }
-            }
-        }
-    }
-});
+const dailyData = <?= json_encode($dailyData) ?>;
 
-// Comparison Chart
-const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
-new Chart(comparisonCtx, {
-    type: 'doughnut',
+const dailyChart = new Chart(dailyCtx, {
+    type: 'line',
     data: {
-        labels: ['Realisasi', 'Sisa Target'],
-        datasets: [{
-            data: [<?= $totalRealization ?>, <?= max(0, $totalTarget - $totalRealization) ?>],
-            backgroundColor: ['#198754', '#e9ecef'],
-            borderWidth: 0
-        }]
+        labels: dailyData.labels,
+        datasets: dailyData.datasets.map(ds => ({
+            ...ds,
+            tension: 0.35,
+            fill: false,
+            pointRadius: 3,
+            borderWidth: 2,
+        }))
     },
     options: {
         responsive: true,
-        plugins: {
-            legend: {
-                position: 'bottom'
-            }
-        }
-    }
-});
-
-// Monthly Chart
-const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
-new Chart(monthlyCtx, {
-    type: 'bar',
-    data: <?= json_encode($monthlyData) ?>,
-    options: {
-        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
                 position: 'top',
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(ctx) {
+                        const value = ctx.parsed.y ?? 0;
+                        return `${ctx.dataset.label}: Rp ${(value / 1000000).toLocaleString('id-ID')} Jt`;
+                    }
+                }
             }
         },
         scales: {
+            x: {
+                grid: { display: false },
+                title: { display: true, text: 'Tanggal' }
+            },
             y: {
                 beginAtZero: true,
+                title: { display: true, text: 'Juta Rupiah' },
                 ticks: {
                     callback: function(value) {
-                        return 'Rp ' + (value / 1000000000).toFixed(1) + ' M';
+                        return (value / 1000000).toLocaleString('id-ID') + ' Jt';
                     }
                 }
             }
         }
     }
 });
+
+// Monthly Comparison Data
+const monthlyData = <?= json_encode($monthlyData) ?>;
+const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
+
+// Calculate combined target and realisasi
+function getComparisonData(companyCode = null) {
+    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    
+    if (companyCode) {
+        // Filter by specific company
+        const dataset = monthlyData.datasets.find(ds => ds.label === companyCode);
+        if (!dataset) return null;
+        
+        return {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Target',
+                    data: Array(12).fill(0), // We don't have target data in monthlyData
+                    backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1,
+                },
+                {
+                    label: 'Realisasi',
+                    data: dataset.data,
+                    backgroundColor: 'rgba(34, 197, 94, 1)',
+                    borderColor: 'rgba(34, 197, 94, 1)',
+                    borderWidth: 1,
+                }
+            ]
+        };
+    }
+    
+    // Combine all companies
+    const combinedRealisasi = Array(12).fill(0);
+    monthlyData.datasets.forEach(ds => {
+        ds.data.forEach((val, idx) => {
+            combinedRealisasi[idx] += val;
+        });
+    });
+    
+    return {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Target',
+                data: Array(12).fill(0),
+                backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: 1,
+            },
+            {
+                label: 'Realisasi',
+                data: combinedRealisasi,
+                backgroundColor: 'rgba(34, 197, 94, 1)',
+                borderColor: 'rgba(34, 197, 94, 1)',
+                borderWidth: 1,
+            }
+        ]
+    };
+}
+
+let comparisonChart = new Chart(comparisonCtx, {
+    type: 'bar',
+    data: getComparisonData(),
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(ctx) {
+                        const value = ctx.parsed.y ?? 0;
+                        return `${ctx.dataset.label}: Rp ${(value / 1000000).toLocaleString('id-ID')} Jt`;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                grid: { display: false },
+                title: { display: true, text: 'Bulan' }
+            },
+            y: {
+                beginAtZero: true,
+                title: { display: true, text: 'Juta Rupiah' },
+                ticks: {
+                    callback: function(value) {
+                        return (value / 1000000).toLocaleString('id-ID') + ' Jt';
+                    }
+                }
+            }
+        }
+    }
+});
+
+function updateComparisonChart() {
+    const companyCode = document.getElementById('companyFilter').value || null;
+    const newData = getComparisonData(companyCode);
+    comparisonChart.data = newData;
+    comparisonChart.update();
+}
 </script>
 <?= $this->endSection() ?>

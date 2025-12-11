@@ -14,93 +14,240 @@
     
     <style>
         :root {
-            --primary-color: #0d3b66;
-            --secondary-color: #1e5f8a;
-            --accent-color: #fca311;
+            --primary-color: #1e468c;
+            --primary-dark: #163666;
+            --accent-blue: #3B82F6;
+            --accent-green: #22C55E;
+            --accent-orange: #F97316;
+            --surface-50: #f8fafc;
+            --surface-100: #f1f5f9;
+            --surface-200: #e2e8f0;
+            --surface-500: #64748b;
+            --surface-600: #475569;
+            --surface-700: #334155;
+            --surface-900: #0f172a;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
         body {
-            background-color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--surface-100);
             min-height: 100vh;
         }
         
-        .navbar-brand {
-            font-weight: 700;
-        }
-        
-        .sidebar {
-            background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            min-height: calc(100vh - 56px);
-        }
-        
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            margin: 0.25rem 0.5rem;
-        }
-        
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
+        /* Navbar */
+        .navbar-shell {
+            background: var(--primary-color);
             color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.75rem;
+            height: 60px;
         }
         
-        .sidebar .nav-link i {
-            margin-right: 0.5rem;
-        }
-        
-        .card {
-            border: none;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            border-radius: 0.75rem;
-        }
-        
-        .card-header {
-            background-color: transparent;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            font-weight: 600;
-        }
-        
-        .stat-card {
-            border-left: 4px solid var(--primary-color);
-        }
-        
-        .stat-card.success { border-left-color: #198754; }
-        .stat-card.warning { border-left-color: #ffc107; }
-        .stat-card.danger { border-left-color: #dc3545; }
-        .stat-card.info { border-left-color: #0dcaf0; }
-        
-        .stat-value {
-            font-size: 1.5rem;
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: #fff;
             font-weight: 700;
-            color: var(--primary-color);
+            font-size: 1.1rem;
         }
         
-        .stat-label {
-            font-size: 0.875rem;
-            color: #6c757d;
+        .brand i {
+            font-size: 1.5rem;
         }
         
-        .company-badge {
-            padding: 0.35rem 0.75rem;
-            border-radius: 0.5rem;
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .nav-menu a {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        /* Main Content */
+        .main-content {
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Cards */
+        .card {
+            background: #fff;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        
+        .card-title {
+            font-size: 1rem;
             font-weight: 600;
-            font-size: 0.75rem;
+            color: var(--surface-700);
+            margin-bottom: 0;
         }
         
-        .company-bbi { background-color: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-        .company-bba { background-color: rgba(16, 185, 129, 0.1); color: #10b981; }
-        .company-japelin { background-color: rgba(249, 115, 22, 0.1); color: #f97316; }
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
         
-        .progress {
-            height: 0.5rem;
-            border-radius: 0.25rem;
+        .summary-card .card-body {
+            padding: 1.25rem;
+        }
+        
+        .summary-card .company-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--surface-700);
+            margin-bottom: 0.75rem;
+        }
+        
+        .summary-card .realisasi-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .summary-card .realisasi-value.text-blue { color: var(--accent-blue); }
+        .summary-card .realisasi-value.text-green { color: var(--accent-green); }
+        .summary-card .realisasi-value.text-orange { color: var(--accent-orange); }
+        
+        .summary-card .today-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--surface-500);
+        }
+        
+        .summary-card .percentage {
+            font-weight: 600;
+        }
+        
+        .summary-card .percentage.up { color: var(--accent-green); }
+        .summary-card .percentage.down { color: #dc3545; }
+        
+        /* Filter Section */
+        .filter-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+        
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .filter-item label {
+            font-weight: 500;
+            color: var(--surface-700);
+            font-size: 0.9rem;
+        }
+        
+        .filter-item select {
+            padding: 0.5rem 2rem 0.5rem 0.75rem;
+            border: 1px solid var(--surface-200);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background-color: #fff;
+            min-width: 140px;
+        }
+        
+        /* Chart Section */
+        .chart-card {
+            margin-bottom: 1rem;
+        }
+        
+        .chart-card .card-header {
+            background: transparent;
+            border-bottom: 1px solid var(--surface-100);
+            padding: 1rem 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .chart-card .card-body {
+            padding: 1rem 1.25rem;
+        }
+        
+        .chart-wrapper {
+            width: 100%;
+            height: 280px;
+            position: relative;
+        }
+        
+        /* Company Filter in Chart */
+        .company-filter {
+            min-width: 150px;
+        }
+        
+        /* Alerts */
+        .alert {
+            border-radius: 8px;
+            border: none;
+        }
+        
+        /* Responsive */
+        @media (max-width: 992px) {
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
         
         @media (max-width: 768px) {
-            .sidebar {
-                min-height: auto;
+            .navbar-shell {
+                padding: 0 1rem;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-item {
+                justify-content: space-between;
+            }
+            
+            .filter-item select {
+                flex: 1;
             }
         }
     </style>
@@ -109,83 +256,40 @@
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: var(--primary-color);">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/dashboard">
-                <i class="bi bi-graph-up-arrow me-2"></i>
-                BOSOWA Revenue
-            </a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle me-1"></i>
-                            <?= session()->get('user_name') ?? 'User' ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><span class="dropdown-item-text text-muted small"><?= session()->get('user_email') ?></span></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </nav>
+    <header class="navbar-shell">
+        <a href="/dashboard" class="brand">
+            <i class="bi bi-graph-up-arrow"></i>
+            <span>BOSOWA</span>
+        </a>
+        
+        <nav class="nav-menu">
+            <a href="/dashboard" class="<?= uri_string() == 'dashboard' ? 'active' : '' ?>">Beranda</a>
+            <a href="/targets" class="<?= str_starts_with(uri_string(), 'targets') ? 'active' : '' ?>">Target</a>
+            <a href="/realizations" class="<?= str_starts_with(uri_string(), 'realizations') ? 'active' : '' ?>">Realisasi</a>
+            <a href="/logout">Log Out</a>
+        </nav>
+    </header>
     
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse py-3">
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link <?= uri_string() == 'dashboard' ? 'active' : '' ?>" href="/dashboard">
-                            <i class="bi bi-speedometer2"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?= str_starts_with(uri_string(), 'targets') ? 'active' : '' ?>" href="/targets">
-                            <i class="bi bi-bullseye"></i> Target
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?= str_starts_with(uri_string(), 'realizations') ? 'active' : '' ?>" href="/realizations">
-                            <i class="bi bi-cash-stack"></i> Realisasi
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link <?= uri_string() == 'sync' ? 'active' : '' ?>" href="/sync">
-                            <i class="bi bi-arrow-repeat"></i> Sync Data
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-            
-            <!-- Main content -->
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-                <?php if (session()->getFlashdata('success')): ?>
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <?= session()->getFlashdata('success') ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                <?php endif; ?>
-                
-                <?php if (session()->getFlashdata('error')): ?>
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <?= session()->getFlashdata('error') ?>
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                <?php endif; ?>
-                
-                <?= $this->renderSection('content') ?>
-            </main>
-        </div>
-    </div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <?php if (session()->getFlashdata('success')): ?>
+            <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                <?= session()->getFlashdata('success') ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+        
+        <?php if (session()->getFlashdata('error')): ?>
+            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                <?= session()->getFlashdata('error') ?>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        <?php endif; ?>
+        
+        <?= $this->renderSection('content') ?>
+    </main>
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
