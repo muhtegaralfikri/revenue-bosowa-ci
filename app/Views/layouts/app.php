@@ -441,8 +441,7 @@
         
         <nav class="nav-menu desktop-menu">
             <a href="/dashboard" class="<?= uri_string() == 'dashboard' ? 'active' : '' ?>">Beranda</a>
-            <a href="/targets" class="<?= str_starts_with(uri_string(), 'targets') ? 'active' : '' ?>">Target</a>
-            <a href="/realizations" class="<?= str_starts_with(uri_string(), 'realizations') ? 'active' : '' ?>">Realisasi</a>
+            <a href="/input" class="<?= str_starts_with(uri_string(), 'input') ? 'active' : '' ?>">Input</a>
             <a href="/logout">Log Out</a>
         </nav>
     </header>
@@ -453,13 +452,9 @@
             <i class="bi bi-house"></i>
             <span>Beranda</span>
         </a>
-        <a href="/targets" class="bottom-bar-item <?= str_starts_with(uri_string(), 'targets') ? 'active' : '' ?>">
-            <i class="bi bi-bullseye"></i>
-            <span>Target</span>
-        </a>
-        <a href="/realizations" class="bottom-bar-item <?= str_starts_with(uri_string(), 'realizations') ? 'active' : '' ?>">
-            <i class="bi bi-cash-stack"></i>
-            <span>Realisasi</span>
+        <a href="/input" class="bottom-bar-item <?= str_starts_with(uri_string(), 'input') ? 'active' : '' ?>">
+            <i class="bi bi-plus-circle"></i>
+            <span>Input</span>
         </a>
         <a href="/logout" class="bottom-bar-item">
             <i class="bi bi-box-arrow-right"></i>
