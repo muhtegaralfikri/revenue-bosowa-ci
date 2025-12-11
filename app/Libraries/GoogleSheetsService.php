@@ -153,32 +153,13 @@ class GoogleSheetsService
             $sheetNames = $spreadsheet->getSheetNames();
             $results['details']['sheets'] = $sheetNames;
             
-            // Get companies for sheet matching
-            $companies = $this->companyModel->getActiveCompanies();
-            $companyMap = [];
-            foreach ($companies as $company) {
-                $companyMap[strtoupper($company['code'])] = $company;
-            }
-            
             foreach ($sheetNames as $sheetName) {
-                $sheetNameUpper = strtoupper($sheetName);
-                
-                // Check if this is a company-specific sheet (BBI, BBA, JAPELIN)
-                $matchedCompany = null;
-                foreach ($companyMap as $code => $company) {
-                    if ($sheetNameUpper === $code) {
-                        $matchedCompany = $company;
-                        break;
-                    }
-                }
-                
-                if ($matchedCompany) {
-                    // Process company-specific sheet
+                // Process REVENUE sheet (like NestJS)
+                if (strtoupper($sheetName) === 'REVENUE') {
                     $worksheet = $spreadsheet->getSheetByName($sheetName);
-                    $parseResult = $this->parseCompanySheet($worksheet, $matchedCompany);
+                    $parseResult = $this->parseRevenueSheet($worksheet);
                     $results['details'][] = [
                         'sheet' => $sheetName,
-                        'company' => $matchedCompany['code'],
                         'imported' => $parseResult['count'],
                         'debug' => $parseResult['debug'] ?? [],
                     ];
@@ -437,6 +418,9 @@ class GoogleSheetsService
 
         // Aggregate by company-month (like NestJS)
         $aggregated = [];
+        $sampleRows = [];
+        $matchedRows = 0;
+        $skippedRows = 0;
 
         for ($i = $dataStartRow; $i < count($data); $i++) {
             $row = $data[$i];
@@ -447,16 +431,27 @@ class GoogleSheetsService
             // Skip total rows
             if (strpos($itemName, 'TOTAL') !== false) continue;
             
-            // Find company from item name suffix
+            // Identify company from item name (like NestJS)
             $companyCode = null;
-            foreach (array_keys($companyMap) as $code) {
-                if (strpos($itemName, $code) !== false) {
-                    $companyCode = $code;
-                    break;
-                }
+            if (strpos($itemName, 'BBI') !== false) {
+                $companyCode = 'BBI';
+            } elseif (strpos($itemName, 'BBA') !== false) {
+                $companyCode = 'BBA';
+            } elseif (strpos($itemName, 'JAPELIN') !== false) {
+                $companyCode = 'JAPELIN';
             }
             
-            if (!$companyCode) continue;
+            // Collect sample rows for debug
+            if (count($sampleRows) < 5) {
+                $sampleRows[] = ['row' => $i, 'item' => substr($itemName, 0, 50), 'company' => $companyCode];
+            }
+            
+            if (!$companyCode) {
+                $skippedRows++;
+                continue;
+            }
+            
+            $matchedRows++;
 
             foreach ($monthColumns as $mc) {
                 $cellValue = $row[$mc['colIndex']] ?? null;
@@ -471,6 +466,9 @@ class GoogleSheetsService
             }
         }
 
+        $result['debug']['sampleRows'] = $sampleRows;
+        $result['debug']['matchedRows'] = $matchedRows;
+        $result['debug']['skippedRows'] = $skippedRows;
         $result['debug']['aggregatedKeys'] = array_keys($aggregated);
 
         // Save aggregated data
