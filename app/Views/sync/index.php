@@ -143,6 +143,13 @@
                     Sync Sekarang
                 </button>
             </form>
+            
+            <?php if (session()->getFlashdata('debug')): ?>
+            <div style="margin-top: 1.5rem; text-align: left; background: #f5f5f5; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto;">
+                <strong>Debug Info:</strong>
+                <pre><?= print_r(session()->getFlashdata('debug'), true) ?></pre>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

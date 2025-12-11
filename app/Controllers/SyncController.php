@@ -32,9 +32,13 @@ class SyncController extends BaseController
         $result = $this->sheetsService->syncAll();
 
         if ($result['success']) {
-            return redirect()->to('/sync')->with('success', $result['message']);
+            return redirect()->to('/sync')
+                ->with('success', $result['message'])
+                ->with('debug', $result['details'] ?? []);
         } else {
-            return redirect()->to('/sync')->with('error', $result['message']);
+            return redirect()->to('/sync')
+                ->with('error', $result['message'])
+                ->with('debug', $result['details'] ?? []);
         }
     }
 }

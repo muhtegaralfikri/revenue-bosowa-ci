@@ -151,17 +151,19 @@ class GoogleSheetsService
 
             $totalImported = 0;
             $sheetNames = $spreadsheet->getSheetNames();
+            $results['details']['sheets'] = $sheetNames;
             
             foreach ($sheetNames as $sheetName) {
                 // Find REVENUE sheet
                 if (stripos($sheetName, 'REVENUE') !== false) {
                     $worksheet = $spreadsheet->getSheetByName($sheetName);
-                    $imported = $this->parseRevenueSheet($worksheet);
+                    $parseResult = $this->parseRevenueSheet($worksheet);
                     $results['details'][] = [
                         'sheet' => $sheetName,
-                        'imported' => $imported,
+                        'imported' => $parseResult['count'],
+                        'debug' => $parseResult['debug'] ?? [],
                     ];
-                    $totalImported += $imported;
+                    $totalImported += $parseResult['count'];
                 }
             }
 
@@ -183,10 +185,10 @@ class GoogleSheetsService
         $this->realizationModel->where('description', 'Google Sheets Sync')->delete();
     }
 
-    protected function parseRevenueSheet($worksheet): int
+    protected function parseRevenueSheet($worksheet): array
     {
+        $result = ['count' => 0, 'debug' => []];
         $data = $worksheet->toArray();
-        $imported = 0;
         
         // Find header rows
         $monthHeaderRow = -1;
@@ -212,9 +214,12 @@ class GoogleSheetsService
             }
         }
 
+        $result['debug']['monthHeaderRow'] = $monthHeaderRow;
+        $result['debug']['columnHeaderRow'] = $columnHeaderRow;
+
         if ($monthHeaderRow === -1 || $columnHeaderRow === -1) {
-            log_message('error', 'Could not find month/column headers');
-            return 0;
+            $result['debug']['error'] = 'Could not find month/column headers';
+            return $result;
         }
 
         // Map REALISASI columns to months
@@ -232,20 +237,16 @@ class GoogleSheetsService
                 for ($searchCol = $col; $searchCol >= 0; $searchCol--) {
                     $cell = strtoupper(trim($monthRow[$searchCol] ?? ''));
                     
-                    // Try Indonesian months
                     $monthIdx = $this->findMonthIndex($cell, $this->monthNames);
                     if ($monthIdx === -1) {
-                        // Try English months
                         $monthIdx = $this->findMonthIndex($cell, $this->monthNamesEng);
                     }
                     
                     if ($monthIdx !== -1) {
                         $monthNum = $monthIdx + 1;
-                        $monthKey = $monthNum . '-' . $currentYear;
-                        
-                        if (!isset($mappedMonths[$monthKey])) {
-                            $mappedMonths[$monthKey] = true;
-                            $monthColumns[$col] = ['month' => $monthNum, 'year' => $currentYear];
+                        if (!isset($mappedMonths[$monthNum])) {
+                            $mappedMonths[$monthNum] = true;
+                            $monthColumns[] = ['month' => $monthNum, 'year' => $currentYear, 'colIndex' => $col];
                         }
                         break;
                     }
@@ -253,45 +254,92 @@ class GoogleSheetsService
             }
         }
 
+        $result['debug']['monthColumns'] = $monthColumns;
+
+        if (empty($monthColumns)) {
+            $result['debug']['error'] = 'No REALISASI columns mapped to months';
+            return $result;
+        }
+
+        // Find Rupiah section start
+        $dataStartRow = $columnHeaderRow + 1;
+        for ($i = $columnHeaderRow + 1; $i < count($data); $i++) {
+            $row = $data[$i];
+            if (!$row) continue;
+            $firstCell = strtolower(trim($row[0] ?? ''));
+            if (strpos($firstCell, 'rupiah') !== false) {
+                $dataStartRow = $i + 1;
+                break;
+            }
+        }
+        $result['debug']['dataStartRow'] = $dataStartRow;
+
         // Get companies
         $companies = $this->companyModel->getActiveCompanies();
         $companyMap = [];
         foreach ($companies as $company) {
             $companyMap[strtoupper($company['code'])] = $company;
         }
+        $result['debug']['companies'] = array_keys($companyMap);
 
-        // Process data rows (after column header)
-        for ($i = $columnHeaderRow + 1; $i < count($data); $i++) {
+        // Aggregate by company-month (like NestJS)
+        $aggregated = [];
+
+        for ($i = $dataStartRow; $i < count($data); $i++) {
             $row = $data[$i];
             if (!$row || empty($row[0])) continue;
             
-            // First column should be date/day
-            $dayValue = $this->parseDay($row[0]);
-            if (!$dayValue) continue;
+            $itemName = strtoupper(trim($row[0]));
             
-            // Find company code in this row or nearby
-            $company = $this->findCompanyInRow($row, $companyMap);
-            if (!$company) continue;
+            // Skip total rows
+            if (strpos($itemName, 'TOTAL') !== false) continue;
+            
+            // Find company from item name suffix
+            $companyCode = null;
+            foreach (array_keys($companyMap) as $code) {
+                if (strpos($itemName, $code) !== false) {
+                    $companyCode = $code;
+                    break;
+                }
+            }
+            
+            if (!$companyCode) continue;
 
-            foreach ($monthColumns as $colIndex => $monthInfo) {
-                if (!isset($row[$colIndex])) continue;
-                
-                $amount = $this->parseAmount($row[$colIndex]);
+            foreach ($monthColumns as $mc) {
+                $cellValue = $row[$mc['colIndex']] ?? null;
+                $amount = $this->parseAmount($cellValue);
                 if ($amount <= 0) continue;
 
-                $entryDate = sprintf('%04d-%02d-%02d', $monthInfo['year'], $monthInfo['month'], $dayValue);
-
-                $this->realizationModel->insert([
-                    'company_id' => $company['id'],
-                    'date' => $entryDate,
-                    'amount' => $amount,
-                    'description' => 'Google Sheets Sync',
-                ]);
-                $imported++;
+                $key = "{$companyCode}-{$mc['year']}-{$mc['month']}";
+                if (!isset($aggregated[$key])) {
+                    $aggregated[$key] = 0;
+                }
+                $aggregated[$key] += $amount;
             }
         }
 
-        return $imported;
+        $result['debug']['aggregatedKeys'] = array_keys($aggregated);
+
+        // Save aggregated data
+        foreach ($aggregated as $key => $totalAmount) {
+            list($companyCode, $year, $month) = explode('-', $key);
+            
+            $company = $companyMap[$companyCode] ?? null;
+            if (!$company) continue;
+
+            // Use first day of month for monthly realization
+            $entryDate = sprintf('%04d-%02d-01', $year, $month);
+
+            $this->realizationModel->insert([
+                'company_id' => $company['id'],
+                'date' => $entryDate,
+                'amount' => $totalAmount,
+                'description' => 'Google Sheets Sync',
+            ]);
+            $result['count']++;
+        }
+
+        return $result;
     }
 
     protected function findMonthIndex(string $cell, array $monthNames): int
