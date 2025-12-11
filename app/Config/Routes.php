@@ -32,6 +32,9 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/sync/run', 'SyncController::run');
 });
 
+// Cron endpoint (no auth, uses secret key)
+$routes->get('/sync/cron', 'SyncController::cron');
+
 // 404 Override
 $routes->set404Override(function () {
     return view('errors/html/error_404');
