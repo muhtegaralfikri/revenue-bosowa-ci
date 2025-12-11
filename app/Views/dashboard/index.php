@@ -1,5 +1,87 @@
 <?= $this->extend('layouts/app') ?>
 
+<?= $this->section('styles') ?>
+<style>
+    @media (max-width: 768px) {
+        .filter-section {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .filter-item {
+            justify-content: space-between;
+        }
+        
+        .filter-item select {
+            flex: 1;
+            width: auto;
+        }
+        
+        .summary-cards {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+        
+        .chart-card .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        
+        .company-filter {
+            width: 100%;
+        }
+        
+        .chart-wrapper {
+            height: 220px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .filter-section {
+            gap: 0.5rem;
+        }
+        
+        .filter-item label {
+            font-size: 0.85rem;
+        }
+        
+        .filter-item select {
+            font-size: 0.85rem;
+            padding: 0.4rem 0.6rem;
+        }
+        
+        .summary-card .card-body {
+            padding: 0.85rem;
+        }
+        
+        .realisasi-value {
+            font-size: 1.1rem;
+        }
+        
+        .today-info {
+            font-size: 0.8rem;
+        }
+        
+        .chart-card .card-header {
+            padding: 0.85rem;
+        }
+        
+        .chart-card .card-title {
+            font-size: 0.95rem;
+        }
+        
+        .chart-card .card-body {
+            padding: 0.85rem;
+        }
+        
+        .chart-wrapper {
+            height: 200px;
+        }
+    }
+</style>
+<?= $this->endSection() ?>
+
 <?= $this->section('content') ?>
 
 <!-- Filter Section -->

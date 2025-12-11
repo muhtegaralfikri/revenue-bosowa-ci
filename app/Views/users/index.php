@@ -261,8 +261,29 @@
     }
     
     @media (max-width: 768px) {
+        .user-shell {
+            gap: 1.25rem;
+        }
+        
+        .dashboard-card .card-header {
+            padding: 1rem;
+        }
+        
+        .dashboard-card .card-body {
+            padding: 1rem;
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+        }
+        
         .form-grid {
             grid-template-columns: 1fr;
+        }
+        
+        .btn-create {
+            width: 100%;
+            justify-content: center;
         }
         
         .user-table th,
@@ -277,6 +298,55 @@
         
         .btn-action span {
             display: none;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .user-shell {
+            gap: 1rem;
+        }
+        
+        .dashboard-card .card-header,
+        .dashboard-card .card-body {
+            padding: 0.85rem;
+        }
+        
+        .eyebrow {
+            font-size: 0.7rem;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+        }
+        
+        .form-field label {
+            font-size: 0.85rem;
+        }
+        
+        .form-field .form-control {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+        }
+        
+        .btn-create {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .user-table th,
+        .user-table td {
+            padding: 0.5rem 0.35rem;
+            font-size: 0.8rem;
+        }
+        
+        .modal-content {
+            width: 95%;
+        }
+        
+        .modal-header,
+        .modal-body,
+        .modal-footer {
+            padding: 0.85rem;
         }
     }
 </style>
