@@ -169,7 +169,11 @@ class GoogleSheetsService
 
             // Clean up temp file
             @unlink($tempFile);
-
+            
+            // Clear cache after successful sync
+            $this->realizationModel->clearCache();
+            
+            $results['details']['totalImported'] = $totalImported;
             $results['success'] = true;
             $results['message'] = "Sync completed. Total {$totalImported} records imported.";
         } catch (\Exception $e) {
@@ -388,29 +392,31 @@ class GoogleSheetsService
             }
         }
 
-        $result['debug']['monthColumns'] = $monthColumns;
+        if (ENVIRONMENT === 'development') {
+            $result['debug']['monthColumns'] = $monthColumns;
+        }
 
         if (empty($monthColumns)) {
-            $result['debug']['error'] = 'No REALISASI columns mapped to months';
+            log_message('error', 'GoogleSheets: No REALISASI columns mapped to months');
             return $result;
         }
 
-        // Debug: show first rows and total
-        $result['debug']['totalRows'] = count($data);
-        $firstRows = [];
-        for ($x = 0; $x < min(10, count($data)); $x++) {
-            $r = $data[$x] ?? [];
-            // Show first 3 columns
-            $cols = [];
-            for ($c = 0; $c < min(3, count($r)); $c++) {
-                $cols[] = substr(trim($r[$c] ?? ''), 0, 25);
+        // Debug: show first rows and total (development only)
+        if (ENVIRONMENT === 'development') {
+            $result['debug']['totalRows'] = count($data);
+            $firstRows = [];
+            for ($x = 0; $x < min(10, count($data)); $x++) {
+                $r = $data[$x] ?? [];
+                $cols = [];
+                for ($c = 0; $c < min(3, count($r)); $c++) {
+                    $cols[] = substr(trim($r[$c] ?? ''), 0, 25);
+                }
+                $firstRows[$x] = implode(' | ', $cols);
             }
-            $firstRows[$x] = implode(' | ', $cols);
+            $result['debug']['firstRows'] = $firstRows;
         }
-        $result['debug']['firstRows'] = $firstRows;
 
         // Find Rupiah section start - check both column A and B
-        // Search up to 100 rows because Rupiah might be after many quantity rows
         $dataStartRow = $columnHeaderRow + 1;
         $rupiahFound = false;
         for ($i = $columnHeaderRow + 1; $i < min(100, count($data)); $i++) {
@@ -421,12 +427,14 @@ class GoogleSheetsService
             if (strpos($cellA, 'rupiah') !== false || strpos($cellB, 'rupiah') !== false) {
                 $dataStartRow = $i + 1;
                 $rupiahFound = true;
-                $result['debug']['rupiahFoundAt'] = $i;
                 break;
             }
         }
-        $result['debug']['rupiahFound'] = $rupiahFound;
-        $result['debug']['dataStartRow'] = $dataStartRow;
+        
+        if (ENVIRONMENT === 'development') {
+            $result['debug']['rupiahFound'] = $rupiahFound;
+            $result['debug']['dataStartRow'] = $dataStartRow;
+        }
 
         // Get companies
         $companies = $this->companyModel->getActiveCompanies();
@@ -434,7 +442,6 @@ class GoogleSheetsService
         foreach ($companies as $company) {
             $companyMap[strtoupper($company['code'])] = $company;
         }
-        $result['debug']['companies'] = array_keys($companyMap);
 
         // Aggregate by company-month (like NestJS)
         $aggregated = [];
@@ -503,19 +510,27 @@ class GoogleSheetsService
             }
         }
 
-        $result['debug']['sampleRows'] = $sampleRows;
-        $result['debug']['matchedRows'] = $matchedRows;
-        $result['debug']['skippedRows'] = $skippedRows;
-        $result['debug']['aggregatedKeys'] = array_keys($aggregated);
-        
-        // Show aggregated totals for Nov and Dec
-        $novDec = [];
-        foreach ($aggregated as $key => $total) {
-            if (strpos($key, '-11') !== false || strpos($key, '-12') !== false) {
-                $novDec[$key] = number_format($total, 0, ',', '.');
+        // Only include debug info in development
+        if (ENVIRONMENT === 'development') {
+            $result['debug']['sampleRows'] = $sampleRows;
+            $result['debug']['matchedRows'] = $matchedRows;
+            $result['debug']['skippedRows'] = $skippedRows;
+            $result['debug']['aggregatedKeys'] = array_keys($aggregated);
+            
+            $novDec = [];
+            foreach ($aggregated as $key => $total) {
+                if (strpos($key, '-11') !== false || strpos($key, '-12') !== false) {
+                    $novDec[$key] = number_format($total, 0, ',', '.');
+                }
             }
+            $result['debug']['novDecTotals'] = $novDec;
         }
-        $result['debug']['novDecTotals'] = $novDec;
+        
+        $result['stats'] = [
+            'matchedRows' => $matchedRows,
+            'skippedRows' => $skippedRows,
+            'aggregatedCount' => count($aggregated),
+        ];
 
         // Save aggregated data
         foreach ($aggregated as $key => $totalAmount) {

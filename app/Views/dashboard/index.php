@@ -267,13 +267,10 @@ const dailyChart = new Chart(dailyCtx, {
 
 // Monthly Comparison Data
 const monthlyData = <?= json_encode($monthlyData) ?>;
-console.log('monthlyData:', monthlyData);
 const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
 
 // Calculate combined target and realisasi
 function getComparisonData(companyCode = null) {
-    console.log('getComparisonData called with:', companyCode);
-    console.log('monthlyData.datasets:', monthlyData.datasets);
     const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
     
     if (companyCode) {
@@ -305,12 +302,10 @@ function getComparisonData(companyCode = null) {
     // Combine all companies
     const combinedRealisasi = Array(12).fill(0);
     monthlyData.datasets.forEach(ds => {
-        console.log('Processing dataset:', ds.label, ds.data);
         ds.data.forEach((val, idx) => {
             combinedRealisasi[idx] += parseFloat(val) || 0;
         });
     });
-    console.log('combinedRealisasi:', combinedRealisasi);
     
     return {
         labels: labels,

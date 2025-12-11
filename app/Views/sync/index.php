@@ -136,6 +136,19 @@
                 Data yang sudah ada dari sync sebelumnya akan dihapus dan diganti dengan data terbaru.
             </p>
             
+            <?php if ($lastSync): ?>
+            <div style="margin-bottom: 1rem; padding: 0.75rem; background: var(--surface-50); border-radius: 6px; font-size: 0.85rem;">
+                <div><strong>Sync terakhir:</strong> <?= $lastSync ?></div>
+                <div><strong>Status:</strong> 
+                    <span style="color: <?= $lastStatus === 'success' ? '#10B981' : ($lastStatus === 'failed' ? '#EF4444' : '#6B7280') ?>">
+                        <?= ucfirst($lastStatus) ?>
+                    </span>
+                </div>
+                <div><strong>Records imported:</strong> <?= $lastCount ?></div>
+                <div><strong>Auto-sync interval:</strong> <?= $syncInterval ?> menit</div>
+            </div>
+            <?php endif; ?>
+            
             <form action="/sync/run" method="post">
                 <?= csrf_field() ?>
                 <button type="submit" class="btn-sync" <?= !$enabled ? 'disabled' : '' ?>>
@@ -144,7 +157,7 @@
                 </button>
             </form>
             
-            <?php if (session()->getFlashdata('debug')): ?>
+            <?php if (ENVIRONMENT === 'development' && session()->getFlashdata('debug')): ?>
             <div style="margin-top: 1.5rem; text-align: left; background: #f5f5f5; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto;">
                 <strong>Debug Info:</strong>
                 <pre><?= print_r(session()->getFlashdata('debug'), true) ?></pre>

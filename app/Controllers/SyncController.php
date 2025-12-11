@@ -3,9 +3,19 @@
 namespace App\Controllers;
 
 use App\Libraries\GoogleSheetsService;
+use App\Models\SyncSettingsModel;
 
 class SyncController extends BaseController
 {
+    protected $sheetsService;
+    protected $syncSettings;
+
+    public function __construct()
+    {
+        $this->sheetsService = new GoogleSheetsService();
+        $this->syncSettings = new SyncSettingsModel();
+    }
+
     /**
      * Cron endpoint - can be called by external cron service
      * URL: /sync/cron?key=YOUR_CRON_KEY
@@ -20,25 +30,32 @@ class SyncController extends BaseController
             return $this->response->setStatusCode(403)->setBody('Forbidden');
         }
         
-        $sheetsService = new GoogleSheetsService();
-        $result = $sheetsService->sync();
+        // Check rate limiting
+        if (!$this->syncSettings->canSync()) {
+            $lastSync = $this->syncSettings->getLastSyncTime();
+            return $this->response->setJSON([
+                'success' => false,
+                'message' => 'Rate limited. Last sync: ' . $lastSync,
+                'time' => date('Y-m-d H:i:s'),
+            ]);
+        }
+        
+        $result = $this->sheetsService->sync();
         
         $totalImported = $result['details']['totalImported'] ?? 0;
+        $status = $result['success'] ? 'success' : 'failed';
+        
+        // Update sync stats
+        $this->syncSettings->updateSyncStats($status, $totalImported);
+        
         log_message('info', "Cron sync via HTTP: {$totalImported} records imported");
         
         return $this->response->setJSON([
-            'success' => true,
+            'success' => $result['success'],
             'message' => $result['message'],
             'imported' => $totalImported,
             'time' => date('Y-m-d H:i:s'),
         ]);
-    }
-
-    protected $sheetsService;
-
-    public function __construct()
-    {
-        $this->sheetsService = new GoogleSheetsService();
     }
 
     public function index()
@@ -46,6 +63,10 @@ class SyncController extends BaseController
         $data = [
             'title' => 'Google Sheets Sync',
             'enabled' => $this->sheetsService->isEnabled(),
+            'lastSync' => $this->syncSettings->getLastSyncTime(),
+            'lastStatus' => $this->syncSettings->getLastSyncStatus(),
+            'lastCount' => $this->syncSettings->get('last_sync_count', '0'),
+            'syncInterval' => $this->syncSettings->getSyncInterval(),
         ];
 
         return view('sync/index', $data);
@@ -57,7 +78,14 @@ class SyncController extends BaseController
             return redirect()->to('/sync')->with('error', 'Google Sheets integration is not enabled.');
         }
 
-        $result = $this->sheetsService->syncAll();
+        // Manual sync bypasses rate limiting
+        $result = $this->sheetsService->sync();
+        
+        $totalImported = $result['details']['totalImported'] ?? 0;
+        $status = $result['success'] ? 'success' : 'failed';
+        
+        // Update sync stats
+        $this->syncSettings->updateSyncStats($status, $totalImported);
 
         if ($result['success']) {
             return redirect()->to('/sync')
