@@ -6,6 +6,7 @@ use Config\GoogleSheets;
 use App\Models\CompanyModel;
 use App\Models\RevenueRealizationModel;
 use Firebase\JWT\JWT;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class GoogleSheetsService
 {
@@ -14,14 +15,8 @@ class GoogleSheetsService
     protected $companyModel;
     protected $realizationModel;
     
-    protected $monthNamesInd = ['', 'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 
-                                 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
-    protected $monthNamesEng = ['', 'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY', 'JUNE',
-                                 'JULY', 'AUGUST', 'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER'];
-    protected $monthNamesShort = ['', 'JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN',
-                                   'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES'];
-    protected $monthNamesShortEng = ['', 'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-                                      'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    protected $monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MEI', 'JUN', 'JUL', 'AGU', 'SEP', 'OKT', 'NOV', 'DES'];
+    protected $monthNamesEng = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
     public function __construct()
     {
@@ -50,7 +45,7 @@ class GoogleSheetsService
             $this->accessToken = $this->getAccessToken();
             return !empty($this->accessToken);
         } catch (\Exception $e) {
-            log_message('error', 'Failed to initialize Google Sheets: ' . $e->getMessage());
+            log_message('error', 'Failed to get access token: ' . $e->getMessage());
             return false;
         }
     }
@@ -62,7 +57,7 @@ class GoogleSheetsService
         $now = time();
         $payload = [
             'iss' => $credentials['client_email'],
-            'scope' => 'https://www.googleapis.com/auth/spreadsheets.readonly',
+            'scope' => 'https://www.googleapis.com/auth/drive.readonly',
             'aud' => 'https://oauth2.googleapis.com/token',
             'iat' => $now,
             'exp' => $now + 3600,
@@ -94,15 +89,16 @@ class GoogleSheetsService
         return $data['access_token'] ?? '';
     }
 
-    protected function apiRequest(string $endpoint): ?array
+    protected function downloadExcelFile(): ?string
     {
+        $url = "https://www.googleapis.com/drive/v3/files/{$this->config->spreadsheetId}?alt=media";
+        
         $ch = curl_init();
         curl_setopt_array($ch, [
-            CURLOPT_URL => $endpoint,
+            CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => [
                 'Authorization: Bearer ' . $this->accessToken,
-                'Accept: application/json',
             ],
         ]);
 
@@ -110,14 +106,19 @@ class GoogleSheetsService
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        $data = json_decode($response, true);
-
         if ($httpCode !== 200) {
-            log_message('error', "API request failed ({$httpCode}): {$response}");
-            return $data; // Return error data for better error messages
+            log_message('error', "Failed to download file ({$httpCode})");
+            return null;
         }
 
-        return $data;
+        // Save to temp file
+        $tempFile = WRITEPATH . 'uploads/temp_' . time() . '.xlsx';
+        if (!is_dir(WRITEPATH . 'uploads')) {
+            mkdir(WRITEPATH . 'uploads', 0755, true);
+        }
+        file_put_contents($tempFile, $response);
+        
+        return $tempFile;
     }
 
     public function syncAll(): array
@@ -129,39 +130,43 @@ class GoogleSheetsService
         ];
 
         if (!$this->initialize()) {
-            $results['message'] = 'Failed to initialize Google Sheets service. Check credentials file.';
+            $results['message'] = 'Failed to initialize. Check credentials file.';
             return $results;
         }
 
         try {
-            // Get spreadsheet info
-            $spreadsheetUrl = "https://sheets.googleapis.com/v4/spreadsheets/{$this->config->spreadsheetId}";
-            $spreadsheet = $this->apiRequest($spreadsheetUrl);
-
-            if (!$spreadsheet || !isset($spreadsheet['sheets'])) {
-                $errorMsg = $spreadsheet['error']['message'] ?? 'Unknown error';
-                $results['message'] = "Failed to get spreadsheet info: {$errorMsg}. Make sure spreadsheet is shared with service account.";
+            // Download Excel file from Google Drive
+            $tempFile = $this->downloadExcelFile();
+            
+            if (!$tempFile || !file_exists($tempFile)) {
+                $results['message'] = 'Failed to download Excel file from Google Drive.';
                 return $results;
             }
 
-            // Clear old Google Sheets data before sync
+            // Load Excel file
+            $spreadsheet = IOFactory::load($tempFile);
+            
+            // Clear old data before sync
             $this->clearOldGoogleSheetsData();
 
             $totalImported = 0;
-            foreach ($spreadsheet['sheets'] as $sheet) {
-                $sheetTitle = $sheet['properties']['title'] ?? '';
-                $company = $this->matchCompanyBySheetTitle($sheetTitle);
-                
-                if ($company) {
-                    $imported = $this->syncSheet($sheetTitle, $company);
+            $sheetNames = $spreadsheet->getSheetNames();
+            
+            foreach ($sheetNames as $sheetName) {
+                // Find REVENUE sheet
+                if (stripos($sheetName, 'REVENUE') !== false) {
+                    $worksheet = $spreadsheet->getSheetByName($sheetName);
+                    $imported = $this->parseRevenueSheet($worksheet);
                     $results['details'][] = [
-                        'sheet' => $sheetTitle,
-                        'company' => $company['code'],
+                        'sheet' => $sheetName,
                         'imported' => $imported,
                     ];
                     $totalImported += $imported;
                 }
             }
+
+            // Clean up temp file
+            @unlink($tempFile);
 
             $results['success'] = true;
             $results['message'] = "Sync completed. Total {$totalImported} records imported.";
@@ -178,84 +183,103 @@ class GoogleSheetsService
         $this->realizationModel->where('description', 'Google Sheets Sync')->delete();
     }
 
-    protected function matchCompanyBySheetTitle(string $title): ?array
+    protected function parseRevenueSheet($worksheet): int
     {
-        $titleUpper = strtoupper($title);
-        $companies = $this->companyModel->getActiveCompanies();
-
-        foreach ($companies as $company) {
-            if (strpos($titleUpper, strtoupper($company['code'])) !== false) {
-                return $company;
-            }
-        }
-
-        return null;
-    }
-
-    protected function syncSheet(string $sheetTitle, array $company): int
-    {
-        try {
-            $encodedTitle = urlencode($sheetTitle);
-            $range = "{$encodedTitle}!A1:ZZ1000";
-            $url = "https://sheets.googleapis.com/v4/spreadsheets/{$this->config->spreadsheetId}/values/{$range}";
-            
-            $response = $this->apiRequest($url);
-
-            if (!$response || !isset($response['values'])) {
-                return 0;
-            }
-
-            return $this->parseAndImportData($response['values'], $company);
-        } catch (\Exception $e) {
-            log_message('error', "Error syncing sheet {$sheetTitle}: " . $e->getMessage());
-            return 0;
-        }
-    }
-
-    protected function parseAndImportData(array $data, array $company): int
-    {
-        $headerRow = null;
-        $columnMapping = [];
+        $data = $worksheet->toArray();
         $imported = 0;
-        $mappedMonths = [];
-
-        // Find header row and map columns
-        foreach ($data as $rowIndex => $row) {
-            if ($this->isHeaderRow($row)) {
-                $headerRow = $rowIndex;
-                $columnMapping = $this->mapColumns($row, $mappedMonths);
-                break;
+        
+        // Find header rows
+        $monthHeaderRow = -1;
+        $columnHeaderRow = -1;
+        
+        for ($i = 0; $i < min(15, count($data)); $i++) {
+            $row = $data[$i];
+            if (!$row) continue;
+            
+            $rowStr = strtoupper(implode(' ', array_filter($row)));
+            
+            // Check for month names
+            foreach (array_merge($this->monthNames, $this->monthNamesEng) as $month) {
+                if (strpos($rowStr, $month) !== false) {
+                    $monthHeaderRow = $i;
+                    break;
+                }
+            }
+            
+            // Check for REALISASI
+            if (strpos($rowStr, 'REALISASI') !== false) {
+                $columnHeaderRow = $i;
             }
         }
 
-        if ($headerRow === null || empty($columnMapping)) {
+        if ($monthHeaderRow === -1 || $columnHeaderRow === -1) {
+            log_message('error', 'Could not find month/column headers');
             return 0;
         }
 
-        // Process data rows
-        for ($i = $headerRow + 1; $i < count($data); $i++) {
+        // Map REALISASI columns to months
+        $monthRow = $data[$monthHeaderRow];
+        $colHeaderRow = $data[$columnHeaderRow];
+        $monthColumns = [];
+        $mappedMonths = [];
+        $currentYear = (int) date('Y');
+
+        for ($col = 0; $col < count($colHeaderRow); $col++) {
+            $colHeader = strtoupper(trim($colHeaderRow[$col] ?? ''));
+            
+            if ($colHeader === 'REALISASI') {
+                // Find which month this belongs to
+                for ($searchCol = $col; $searchCol >= 0; $searchCol--) {
+                    $cell = strtoupper(trim($monthRow[$searchCol] ?? ''));
+                    
+                    // Try Indonesian months
+                    $monthIdx = $this->findMonthIndex($cell, $this->monthNames);
+                    if ($monthIdx === -1) {
+                        // Try English months
+                        $monthIdx = $this->findMonthIndex($cell, $this->monthNamesEng);
+                    }
+                    
+                    if ($monthIdx !== -1) {
+                        $monthNum = $monthIdx + 1;
+                        $monthKey = $monthNum . '-' . $currentYear;
+                        
+                        if (!isset($mappedMonths[$monthKey])) {
+                            $mappedMonths[$monthKey] = true;
+                            $monthColumns[$col] = ['month' => $monthNum, 'year' => $currentYear];
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Get companies
+        $companies = $this->companyModel->getActiveCompanies();
+        $companyMap = [];
+        foreach ($companies as $company) {
+            $companyMap[strtoupper($company['code'])] = $company;
+        }
+
+        // Process data rows (after column header)
+        for ($i = $columnHeaderRow + 1; $i < count($data); $i++) {
             $row = $data[$i];
-            if (empty($row) || !isset($row[0])) {
-                continue;
-            }
+            if (!$row || empty($row[0])) continue;
+            
+            // First column should be date/day
+            $dayValue = $this->parseDay($row[0]);
+            if (!$dayValue) continue;
+            
+            // Find company code in this row or nearby
+            $company = $this->findCompanyInRow($row, $companyMap);
+            if (!$company) continue;
 
-            $dateValue = $this->parseDate($row[0] ?? '');
-            if (!$dateValue) {
-                continue;
-            }
-
-            foreach ($columnMapping as $colIndex => $monthInfo) {
-                if (!isset($row[$colIndex])) {
-                    continue;
-                }
-
+            foreach ($monthColumns as $colIndex => $monthInfo) {
+                if (!isset($row[$colIndex])) continue;
+                
                 $amount = $this->parseAmount($row[$colIndex]);
-                if ($amount <= 0) {
-                    continue;
-                }
+                if ($amount <= 0) continue;
 
-                // Build date for this entry
-                $entryDate = sprintf('%04d-%02d-%02d', $monthInfo['year'], $monthInfo['month'], $dateValue['day']);
+                $entryDate = sprintf('%04d-%02d-%02d', $monthInfo['year'], $monthInfo['month'], $dayValue);
 
                 $this->realizationModel->insert([
                     'company_id' => $company['id'],
@@ -270,114 +294,49 @@ class GoogleSheetsService
         return $imported;
     }
 
-    protected function isHeaderRow(array $row): bool
+    protected function findMonthIndex(string $cell, array $monthNames): int
+    {
+        foreach ($monthNames as $idx => $month) {
+            if (strpos($cell, $month) !== false) {
+                return $idx;
+            }
+        }
+        return -1;
+    }
+
+    protected function findCompanyInRow(array $row, array $companyMap): ?array
     {
         foreach ($row as $cell) {
             $cellUpper = strtoupper(trim($cell ?? ''));
-            if (strpos($cellUpper, 'REALISASI') !== false || strpos($cellUpper, 'TANGGAL') !== false) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    protected function mapColumns(array $headerRow, array &$mappedMonths): array
-    {
-        $mapping = [];
-        $currentYear = date('Y');
-
-        foreach ($headerRow as $colIndex => $header) {
-            $headerUpper = strtoupper(trim($header ?? ''));
-            
-            if (strpos($headerUpper, 'REALISASI') !== false) {
-                $monthYear = $this->extractMonthYear($headerUpper, $currentYear);
-                if ($monthYear) {
-                    $monthKey = $monthYear['month'] . '-' . $monthYear['year'];
-                    if (!isset($mappedMonths[$monthKey])) {
-                        $mappedMonths[$monthKey] = true;
-                        $mapping[$colIndex] = $monthYear;
-                    }
+            foreach ($companyMap as $code => $company) {
+                if (strpos($cellUpper, $code) !== false) {
+                    return $company;
                 }
             }
         }
-
-        return $mapping;
-    }
-
-    protected function extractMonthYear(string $header, int $defaultYear): ?array
-    {
-        // Try to find year in header
-        preg_match('/20\d{2}/', $header, $yearMatch);
-        $year = !empty($yearMatch) ? (int) $yearMatch[0] : $defaultYear;
-
-        // Try Indonesian month names
-        foreach ($this->monthNamesInd as $monthNum => $monthName) {
-            if ($monthNum > 0 && strpos($header, $monthName) !== false) {
-                return ['month' => $monthNum, 'year' => $year];
-            }
-        }
-
-        // Try English month names
-        foreach ($this->monthNamesEng as $monthNum => $monthName) {
-            if ($monthNum > 0 && strpos($header, $monthName) !== false) {
-                return ['month' => $monthNum, 'year' => $year];
-            }
-        }
-
-        // Try short Indonesian month names
-        foreach ($this->monthNamesShort as $monthNum => $monthName) {
-            if ($monthNum > 0 && strpos($header, $monthName) !== false) {
-                return ['month' => $monthNum, 'year' => $year];
-            }
-        }
-
-        // Try short English month names
-        foreach ($this->monthNamesShortEng as $monthNum => $monthName) {
-            if ($monthNum > 0 && strpos($header, $monthName) !== false) {
-                return ['month' => $monthNum, 'year' => $year];
-            }
-        }
-
         return null;
     }
 
-    protected function parseDate($value): ?array
+    protected function parseDay($value): ?int
     {
-        if (empty($value)) {
-            return null;
-        }
-
-        // If numeric (Excel serial date or day number)
+        if (empty($value)) return null;
+        
         if (is_numeric($value)) {
             $num = (int) $value;
             if ($num >= 1 && $num <= 31) {
-                return ['day' => $num];
+                return $num;
             }
         }
-
-        // Try to parse as date string
-        $timestamp = strtotime($value);
-        if ($timestamp !== false) {
-            return ['day' => (int) date('j', $timestamp)];
-        }
-
+        
         return null;
     }
 
     protected function parseAmount($value): float
     {
-        if (empty($value)) {
-            return 0;
-        }
-
-        // If already numeric, return directly
-        if (is_numeric($value)) {
-            return (float) $value;
-        }
-
-        // Remove currency symbols and spaces
+        if (empty($value)) return 0;
+        if (is_numeric($value)) return (float) $value;
+        
         $cleaned = preg_replace('/[Rp\s\.]/i', '', $value);
-        // Replace comma with dot for decimal
         $cleaned = str_replace(',', '.', $cleaned);
         
         return (float) $cleaned;
