@@ -395,9 +395,18 @@ class GoogleSheetsService
             return $result;
         }
 
+        // Debug: show first rows and total
+        $result['debug']['totalRows'] = count($data);
+        $firstRows = [];
+        for ($x = 0; $x < min(10, count($data)); $x++) {
+            $r = $data[$x] ?? [];
+            $firstRows[$x] = substr(trim($r[0] ?? '(empty)'), 0, 40);
+        }
+        $result['debug']['firstRows'] = $firstRows;
+
         // Find Rupiah section start
         $dataStartRow = $columnHeaderRow + 1;
-        for ($i = $columnHeaderRow + 1; $i < count($data); $i++) {
+        for ($i = $columnHeaderRow + 1; $i < min(30, count($data)); $i++) {
             $row = $data[$i];
             if (!$row) continue;
             $firstCell = strtolower(trim($row[0] ?? ''));
