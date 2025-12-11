@@ -25,6 +25,10 @@ $routes->group('', ['filter' => 'auth'], function ($routes) {
     $routes->post('/users/store', 'UserController::store');
     $routes->post('/users/update/(:num)', 'UserController::update/$1');
     $routes->get('/users/delete/(:num)', 'UserController::delete/$1');
+    
+    // Google Sheets Sync
+    $routes->get('/sync', 'SyncController::index');
+    $routes->post('/sync/run', 'SyncController::run');
 });
 
 // 404 Override

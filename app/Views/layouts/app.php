@@ -461,6 +461,7 @@
             <a href="/dashboard" class="<?= uri_string() == 'dashboard' ? 'active' : '' ?>">Beranda</a>
             <a href="/input" class="<?= str_starts_with(uri_string(), 'input') ? 'active' : '' ?>">Input</a>
             <a href="/users" class="<?= str_starts_with(uri_string(), 'users') ? 'active' : '' ?>">Users</a>
+            <a href="/sync" class="<?= str_starts_with(uri_string(), 'sync') ? 'active' : '' ?>">Sync</a>
             <a href="/logout">Log Out</a>
         </nav>
     </header>
