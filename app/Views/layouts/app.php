@@ -451,6 +451,7 @@
         <nav class="nav-menu desktop-menu">
             <a href="/dashboard" class="<?= uri_string() == 'dashboard' ? 'active' : '' ?>">Beranda</a>
             <a href="/input" class="<?= str_starts_with(uri_string(), 'input') ? 'active' : '' ?>">Input</a>
+            <a href="/users" class="<?= str_starts_with(uri_string(), 'users') ? 'active' : '' ?>">Users</a>
             <a href="/logout">Log Out</a>
         </nav>
     </header>
@@ -464,6 +465,10 @@
         <a href="/input" class="bottom-bar-item <?= str_starts_with(uri_string(), 'input') ? 'active' : '' ?>">
             <i class="bi bi-plus-circle"></i>
             <span>Input</span>
+        </a>
+        <a href="/users" class="bottom-bar-item <?= str_starts_with(uri_string(), 'users') ? 'active' : '' ?>">
+            <i class="bi bi-people"></i>
+            <span>Users</span>
         </a>
         <a href="/logout" class="bottom-bar-item">
             <i class="bi bi-box-arrow-right"></i>
