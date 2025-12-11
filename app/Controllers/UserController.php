@@ -35,14 +35,22 @@ class UserController extends BaseController
             return redirect()->back()->withInput()->with('error', implode('<br>', $this->validator->getErrors()));
         }
 
+        // Validate password strength
+        $password = $this->request->getPost('password');
+        $passwordErrors = UserModel::validatePasswordStrength($password);
+        if (!empty($passwordErrors)) {
+            return redirect()->back()->withInput()->with('error', implode('<br>', $passwordErrors));
+        }
+
         $this->userModel->insert([
             'name' => $this->request->getPost('name'),
             'email' => $this->request->getPost('email'),
-            'password' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
+            'password' => password_hash($password, PASSWORD_DEFAULT),
             'role' => 'viewer',
             'is_active' => 1,
         ]);
 
+        log_message('info', 'New user created: ' . $this->request->getPost('email'));
         return redirect()->to('/users')->with('success', 'Pengguna berhasil ditambahkan.');
     }
 
@@ -69,14 +77,16 @@ class UserController extends BaseController
 
         $password = $this->request->getPost('password');
         if (!empty($password)) {
-            if (strlen($password) < 8) {
-                return redirect()->back()->withInput()->with('error', 'Password minimal 8 karakter.');
+            $passwordErrors = UserModel::validatePasswordStrength($password);
+            if (!empty($passwordErrors)) {
+                return redirect()->back()->withInput()->with('error', implode('<br>', $passwordErrors));
             }
             $data['password'] = password_hash($password, PASSWORD_DEFAULT);
         }
 
         $this->userModel->update($id, $data);
 
+        log_message('info', 'User updated: ' . $this->request->getPost('email'));
         return redirect()->to('/users')->with('success', 'Pengguna berhasil diperbarui.');
     }
 

@@ -13,6 +13,7 @@ use CodeIgniter\Filters\PageCache;
 use CodeIgniter\Filters\PerformanceMetrics;
 use CodeIgniter\Filters\SecureHeaders;
 use App\Filters\AuthFilter;
+use App\Filters\SecurityHeadersFilter;
 
 class Filters extends BaseFilters
 {
@@ -36,6 +37,7 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
         'auth'          => AuthFilter::class,
+        'securityheaders' => SecurityHeadersFilter::class,
     ];
 
     /**
@@ -79,8 +81,8 @@ class Filters extends BaseFilters
             // 'invalidchars',
         ],
         'after' => [
+            'securityheaders', // Add security headers to all responses
             // 'honeypot',
-            // 'secureheaders',
         ],
     ];
 
