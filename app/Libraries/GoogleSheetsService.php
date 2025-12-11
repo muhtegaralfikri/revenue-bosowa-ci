@@ -464,9 +464,18 @@ class GoogleSheetsService
                 $companyCode = 'JAPELIN';
             }
             
-            // Collect sample rows for debug
-            if (count($sampleRows) < 5) {
-                $sampleRows[] = ['row' => $i, 'item' => substr($itemName, 0, 50), 'company' => $companyCode];
+            // Collect sample rows for debug (with amounts)
+            if (count($sampleRows) < 5 && !empty($monthColumns)) {
+                $mc = $monthColumns[count($monthColumns) - 1]; // Get last month (Nov/Dec)
+                $rawVal = $row[$mc['colIndex']] ?? null;
+                $parsedVal = $this->parseAmount($rawVal);
+                $sampleRows[] = [
+                    'row' => $i, 
+                    'item' => substr($itemName, 0, 40), 
+                    'company' => $companyCode,
+                    'raw' => $rawVal,
+                    'parsed' => $parsedVal,
+                ];
             }
             
             if (!$companyCode) {
@@ -555,12 +564,53 @@ class GoogleSheetsService
 
     protected function parseAmount($value): float
     {
-        if (empty($value)) return 0;
-        if (is_numeric($value)) return (float) $value;
+        if ($value === null || $value === '') return 0;
+
+        // If already a number from PhpSpreadsheet, return it directly (rounded)
+        if (is_numeric($value)) {
+            return round((float) $value);
+        }
+
+        $strValue = trim((string) $value);
         
-        $cleaned = preg_replace('/[Rp\s\.]/i', '', $value);
-        $cleaned = str_replace(',', '.', $cleaned);
+        // Detect Indonesian vs International format
+        $hasDot = strpos($strValue, '.') !== false;
+        $hasComma = strpos($strValue, ',') !== false;
         
-        return (float) $cleaned;
+        $cleaned = '';
+        
+        if ($hasDot && $hasComma) {
+            // Indonesian format: 1.234.567,89 -> dots are thousands, comma is decimal
+            $cleaned = str_replace(['.', ' ', 'Rp'], '', $strValue);
+            $cleaned = str_replace(',', '.', $cleaned);
+        } elseif ($hasDot && !$hasComma) {
+            // Could be "1.234.567" (Indo thousands) or "1234567.89" (decimal)
+            $temp = preg_replace('/[Rp\s]/i', '', $strValue);
+            $parts = explode('.', $temp);
+            if (count($parts) > 2 || (count($parts) === 2 && strlen($parts[count($parts)-1]) === 3)) {
+                // Multiple dots or last part is 3 digits = thousand separators
+                $cleaned = str_replace('.', '', $temp);
+            } else {
+                // Single dot with non-3-digit decimal = decimal point
+                $cleaned = $temp;
+            }
+        } elseif ($hasComma && !$hasDot) {
+            // Comma only: could be "1,234,567" (thousands) or "1234567,89" (Indo decimal)
+            $temp = preg_replace('/[Rp\s]/i', '', $strValue);
+            $parts = explode(',', $temp);
+            if (count($parts) === 2 && strlen($parts[1]) <= 2) {
+                // Single comma with 1-2 digits after = Indonesian decimal
+                $cleaned = str_replace(',', '.', $temp);
+            } else {
+                // Multiple commas or 3+ digits after = thousand separators
+                $cleaned = str_replace(',', '', $temp);
+            }
+        } else {
+            // No dots or commas, just remove currency symbols and spaces
+            $cleaned = preg_replace('/[Rp\s]/i', '', $strValue);
+        }
+
+        $amount = (float) $cleaned;
+        return round($amount);
     }
 }
