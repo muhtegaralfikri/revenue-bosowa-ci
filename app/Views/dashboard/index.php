@@ -2,30 +2,55 @@
 
 <?= $this->section('styles') ?>
 <style>
+    /* Dashboard specific responsive overrides */
+    .row {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+    }
+    
+    .row > .col-12 {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
     @media (max-width: 768px) {
         .filter-section {
             flex-direction: column;
             align-items: stretch;
+            gap: 0.75rem;
         }
         
         .filter-item {
+            display: flex;
             justify-content: space-between;
+            align-items: center;
+        }
+        
+        .filter-item label {
+            flex-shrink: 0;
+            margin-right: 0.5rem;
         }
         
         .filter-item select {
             flex: 1;
             width: auto;
+            max-width: 200px;
         }
         
         .summary-cards {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr !important;
             gap: 0.75rem;
         }
         
         .chart-card .card-header {
             flex-direction: column;
-            align-items: flex-start;
+            align-items: stretch !important;
             gap: 0.75rem;
+            padding: 1rem;
+        }
+        
+        .chart-card .card-title {
+            font-size: 0.95rem;
         }
         
         .company-filter {
@@ -33,7 +58,11 @@
         }
         
         .chart-wrapper {
-            height: 220px;
+            height: 250px;
+        }
+        
+        .chart-card .card-body {
+            padding: 0.75rem;
         }
     }
     
@@ -56,7 +85,7 @@
         }
         
         .realisasi-value {
-            font-size: 1.1rem;
+            font-size: 1rem !important;
         }
         
         .today-info {
@@ -64,19 +93,19 @@
         }
         
         .chart-card .card-header {
-            padding: 0.85rem;
+            padding: 0.75rem;
         }
         
         .chart-card .card-title {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
         
         .chart-card .card-body {
-            padding: 0.85rem;
+            padding: 0.5rem;
         }
         
         .chart-wrapper {
-            height: 200px;
+            height: 220px;
         }
     }
 </style>
