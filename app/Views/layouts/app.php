@@ -106,9 +106,107 @@
             flex-shrink: 0;
         }
         
-        /* Bottom Bar (Hidden on desktop) */
-        .bottom-bar {
+        /* Mobile Menu Button */
+        .mobile-menu-btn {
             display: none;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        
+        /* Slide Menu Overlay */
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .menu-overlay.active {
+            display: block;
+        }
+        
+        /* Slide Menu */
+        .slide-menu {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: #fff;
+            z-index: 1001;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .slide-menu.active {
+            left: 0;
+        }
+        
+        .slide-menu-header {
+            background: var(--primary-color);
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .slide-menu-header .brand-logo {
+            height: 32px;
+        }
+        
+        .slide-menu-close {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        
+        .slide-menu-nav {
+            padding: 1rem 0;
+        }
+        
+        .slide-menu-nav a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1.25rem;
+            color: var(--surface-700);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .slide-menu-nav a:hover {
+            background: var(--surface-100);
+        }
+        
+        .slide-menu-nav a.active {
+            background: var(--surface-100);
+            color: var(--primary-color);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .slide-menu-nav a i {
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+        }
+        
+        .slide-menu-divider {
+            height: 1px;
+            background: var(--surface-200);
+            margin: 0.5rem 1.25rem;
         }
         
         /* Main Content */
@@ -262,7 +360,7 @@
             .navbar-shell {
                 padding: 0 1rem;
                 height: 56px;
-                justify-content: center;
+                justify-content: space-between;
             }
             
             .brand {
@@ -274,49 +372,13 @@
                 display: none;
             }
             
-            /* Show bottom bar on mobile */
-            .bottom-bar {
-                display: flex;
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: #fff;
-                border-top: 1px solid var(--surface-200);
-                padding: 0.5rem 0;
-                z-index: 1000;
-                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-            }
-            
-            .bottom-bar-item {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                text-decoration: none;
-                color: var(--surface-500);
-                font-size: 0.7rem;
-                padding: 0.25rem;
-                transition: color 0.2s;
-            }
-            
-            .bottom-bar-item i {
-                font-size: 1.25rem;
-                margin-bottom: 0.15rem;
-            }
-            
-            .bottom-bar-item.active {
-                color: var(--primary-color);
-            }
-            
-            .bottom-bar-item:hover {
-                color: var(--primary-color);
+            /* Show hamburger button on mobile */
+            .mobile-menu-btn {
+                display: block;
             }
             
             .main-content {
                 padding: 1rem;
-                padding-bottom: 5rem; /* Space for bottom bar */
             }
             
             .summary-cards {
@@ -451,7 +513,7 @@
     <?= $this->renderSection('styles') ?>
 </head>
 <body>
-    <!-- Navbar (Desktop) -->
+    <!-- Navbar -->
     <header class="navbar-shell">
         <a href="/dashboard" class="brand">
             <img src="/assets/images/logo.png" alt="Bosowa" class="brand-logo">
@@ -464,26 +526,47 @@
             <a href="/sync" class="<?= str_starts_with(uri_string(), 'sync') ? 'active' : '' ?>">Sync</a>
             <a href="/logout">Log Out</a>
         </nav>
+        
+        <!-- Mobile Menu Button -->
+        <button class="mobile-menu-btn" onclick="toggleMenu()">
+            <i class="bi bi-list"></i>
+        </button>
     </header>
     
-    <!-- Bottom Bar (Mobile) -->
-    <nav class="bottom-bar">
-        <a href="/dashboard" class="bottom-bar-item <?= uri_string() == 'dashboard' ? 'active' : '' ?>">
-            <i class="bi bi-house"></i>
-            <span>Beranda</span>
-        </a>
-        <a href="/input" class="bottom-bar-item <?= str_starts_with(uri_string(), 'input') ? 'active' : '' ?>">
-            <i class="bi bi-plus-circle"></i>
-            <span>Input</span>
-        </a>
-        <a href="/users" class="bottom-bar-item <?= str_starts_with(uri_string(), 'users') ? 'active' : '' ?>">
-            <i class="bi bi-people"></i>
-            <span>Users</span>
-        </a>
-        <a href="/logout" class="bottom-bar-item">
-            <i class="bi bi-box-arrow-right"></i>
-            <span>Keluar</span>
-        </a>
+    <!-- Slide Menu Overlay -->
+    <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
+    
+    <!-- Slide Menu -->
+    <nav class="slide-menu" id="slideMenu">
+        <div class="slide-menu-header">
+            <img src="/assets/images/logo.png" alt="Bosowa" class="brand-logo">
+            <button class="slide-menu-close" onclick="toggleMenu()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="slide-menu-nav">
+            <a href="/dashboard" class="<?= uri_string() == 'dashboard' ? 'active' : '' ?>">
+                <i class="bi bi-house"></i>
+                <span>Beranda</span>
+            </a>
+            <a href="/input" class="<?= str_starts_with(uri_string(), 'input') ? 'active' : '' ?>">
+                <i class="bi bi-plus-circle"></i>
+                <span>Input Revenue</span>
+            </a>
+            <a href="/users" class="<?= str_starts_with(uri_string(), 'users') ? 'active' : '' ?>">
+                <i class="bi bi-people"></i>
+                <span>Users</span>
+            </a>
+            <a href="/sync" class="<?= str_starts_with(uri_string(), 'sync') ? 'active' : '' ?>">
+                <i class="bi bi-cloud-download"></i>
+                <span>Sync Data</span>
+            </a>
+            <div class="slide-menu-divider"></div>
+            <a href="/logout">
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Log Out</span>
+            </a>
+        </div>
     </nav>
     
     <!-- Main Content -->
@@ -514,6 +597,17 @@
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Slide Menu JS -->
+    <script>
+    function toggleMenu() {
+        const slideMenu = document.getElementById('slideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        slideMenu.classList.toggle('active');
+        menuOverlay.classList.toggle('active');
+        document.body.style.overflow = slideMenu.classList.contains('active') ? 'hidden' : '';
+    }
+    </script>
     
     <?= $this->renderSection('scripts') ?>
 </body>
