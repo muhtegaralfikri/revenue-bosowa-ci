@@ -180,8 +180,28 @@
 // Format number input with thousand separator display
 const amountInput = document.getElementById('amount');
 amountInput.addEventListener('input', function(e) {
-    // Remove non-numeric characters for the actual value
     this.value = this.value.replace(/[^0-9]/g, '');
 });
+
+// Handle mobile view for company dropdown
+const companySelect = document.getElementById('company_id');
+const isMobile = () => window.innerWidth <= 576;
+
+function updateCompanyOptions() {
+    const options = companySelect.querySelectorAll('option[data-code]');
+    options.forEach(option => {
+        if (isMobile()) {
+            option.textContent = option.dataset.code;
+        } else {
+            option.textContent = option.dataset.name;
+        }
+    });
+}
+
+// Initial update
+updateCompanyOptions();
+
+// Update on resize
+window.addEventListener('resize', updateCompanyOptions);
 </script>
 <?= $this->endSection() ?>
