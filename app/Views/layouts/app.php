@@ -54,15 +54,14 @@
         .brand {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
             text-decoration: none;
-            color: #fff;
-            font-weight: 700;
-            font-size: 1.1rem;
+            height: 40px;
         }
         
-        .brand i {
-            font-size: 1.5rem;
+        .brand-logo {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
         }
         
         .nav-menu {
@@ -258,8 +257,7 @@
     <!-- Navbar -->
     <header class="navbar-shell">
         <a href="/dashboard" class="brand">
-            <i class="bi bi-graph-up-arrow"></i>
-            <span>BOSOWA</span>
+            <img src="/assets/images/logo.png" alt="Bosowa" class="brand-logo">
         </a>
         
         <nav class="nav-menu">
