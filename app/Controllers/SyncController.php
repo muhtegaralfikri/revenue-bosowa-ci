@@ -40,7 +40,7 @@ class SyncController extends BaseController
             ]);
         }
         
-        $result = $this->sheetsService->sync();
+        $result = $this->sheetsService->syncAll();
         
         $totalImported = $result['details']['totalImported'] ?? 0;
         $status = $result['success'] ? 'success' : 'failed';
@@ -79,7 +79,7 @@ class SyncController extends BaseController
         }
 
         // Manual sync bypasses rate limiting
-        $result = $this->sheetsService->sync();
+        $result = $this->sheetsService->syncAll();
         
         $totalImported = $result['details']['totalImported'] ?? 0;
         $status = $result['success'] ? 'success' : 'failed';
