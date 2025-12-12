@@ -65,7 +65,7 @@ class SyncController extends BaseController
             'enabled' => $this->sheetsService->isEnabled(),
             'lastSync' => $this->syncSettings->getLastSyncTime(),
             'lastStatus' => $this->syncSettings->getLastSyncStatus(),
-            'lastCount' => $this->syncSettings->get('last_sync_count', '0'),
+            'lastCount' => $this->syncSettings->getValue('last_sync_count', '0'),
             'syncInterval' => $this->syncSettings->getSyncInterval(),
         ];
 
