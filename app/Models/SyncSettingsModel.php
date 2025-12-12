@@ -64,7 +64,9 @@ class SyncSettingsModel extends Model
 
         $interval = $this->getSyncInterval();
         $lastSyncTime = strtotime($lastSync);
-        $nextSyncTime = $lastSyncTime + ($interval * 60);
+        // Toleransi 30 detik untuk menghindari race condition dengan cron
+        $tolerance = 30;
+        $nextSyncTime = $lastSyncTime + ($interval * 60) - $tolerance;
 
         return time() >= $nextSyncTime;
     }
