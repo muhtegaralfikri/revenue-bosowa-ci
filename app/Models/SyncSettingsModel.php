@@ -13,13 +13,13 @@ class SyncSettingsModel extends Model
     protected $allowedFields = ['key', 'value'];
     protected $useTimestamps = true;
 
-    public function get(string $key, $default = null)
+    public function getValue(string $key, $default = null)
     {
         $result = $this->where('key', $key)->first();
         return $result ? $result['value'] : $default;
     }
 
-    public function set(string $key, $value): bool
+    public function setValue(string $key, $value): bool
     {
         $existing = $this->where('key', $key)->first();
         
@@ -32,27 +32,27 @@ class SyncSettingsModel extends Model
 
     public function getLastSyncTime(): ?string
     {
-        return $this->get('last_sync_time');
+        return $this->getValue('last_sync_time');
     }
 
     public function setLastSyncTime(string $time): bool
     {
-        return $this->set('last_sync_time', $time);
+        return $this->setValue('last_sync_time', $time);
     }
 
     public function getLastSyncStatus(): string
     {
-        return $this->get('last_sync_status', 'never');
+        return $this->getValue('last_sync_status', 'never');
     }
 
     public function setLastSyncStatus(string $status): bool
     {
-        return $this->set('last_sync_status', $status);
+        return $this->setValue('last_sync_status', $status);
     }
 
     public function getSyncInterval(): int
     {
-        return (int) $this->get('sync_interval_minutes', 5);
+        return (int) $this->getValue('sync_interval_minutes', 5);
     }
 
     public function canSync(): bool
@@ -73,6 +73,6 @@ class SyncSettingsModel extends Model
     {
         $this->setLastSyncTime(date('Y-m-d H:i:s'));
         $this->setLastSyncStatus($status);
-        $this->set('last_sync_count', (string) $count);
+        $this->setValue('last_sync_count', (string) $count);
     }
 }
