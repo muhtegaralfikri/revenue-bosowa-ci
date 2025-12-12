@@ -13,8 +13,7 @@ class AddIndexes extends Migration
         $this->forge->addKey('date', false, false, 'idx_realizations_date');
         
         // Composite index for common queries
-        $this->db->query('CREATE INDEX idx_realizations_company_date ON ' . $this->db->prefixTable('revenue_realizations') . ' (company_id, date)');
-        $this->db->query('CREATE INDEX idx_realizations_year_month ON ' . $this->db->prefixTable('revenue_realizations') . ' (YEAR(date), MONTH(date))');
+        $this->db->query('CREATE INDEX idx_realizations_company_date ON ' . $this->db->prefixTable('revenue_realizations') . ' (company_id, `date`)');
         
         // Add indexes to revenue_targets table
         $this->db->query('CREATE INDEX idx_targets_company ON ' . $this->db->prefixTable('revenue_targets') . ' (company_id)');
@@ -36,7 +35,6 @@ class AddIndexes extends Migration
         $this->db->query('DROP INDEX IF EXISTS idx_realizations_company ON ' . $this->db->prefixTable('revenue_realizations'));
         $this->db->query('DROP INDEX IF EXISTS idx_realizations_date ON ' . $this->db->prefixTable('revenue_realizations'));
         $this->db->query('DROP INDEX IF EXISTS idx_realizations_company_date ON ' . $this->db->prefixTable('revenue_realizations'));
-        $this->db->query('DROP INDEX IF EXISTS idx_realizations_year_month ON ' . $this->db->prefixTable('revenue_realizations'));
         
         $this->db->query('DROP INDEX IF EXISTS idx_targets_company ON ' . $this->db->prefixTable('revenue_targets'));
         $this->db->query('DROP INDEX IF EXISTS idx_targets_year_month ON ' . $this->db->prefixTable('revenue_targets'));
