@@ -19,7 +19,7 @@ class SyncSheets extends BaseCommand
         
         try {
             $sheetsService = new GoogleSheetsService();
-            $result = $sheetsService->sync();
+            $result = $sheetsService->syncAll();
             
             if (strpos($result['message'], 'disabled') !== false) {
                 CLI::write('Google Sheets sync is disabled.', 'red');
