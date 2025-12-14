@@ -5,6 +5,7 @@ namespace App\Commands;
 use CodeIgniter\CLI\BaseCommand;
 use CodeIgniter\CLI\CLI;
 use App\Libraries\GoogleSheetsService;
+use App\Models\SyncSettingsModel;
 
 class SyncSheets extends BaseCommand
 {
@@ -17,6 +18,8 @@ class SyncSheets extends BaseCommand
     {
         CLI::write('Starting Google Sheets sync...', 'yellow');
         
+        $syncSettings = new SyncSettingsModel();
+        
         try {
             $sheetsService = new GoogleSheetsService();
             $result = $sheetsService->syncAll();
@@ -27,12 +30,20 @@ class SyncSheets extends BaseCommand
             }
             
             $totalImported = $result['details']['totalImported'] ?? 0;
+            $status = $result['success'] ? 'success' : 'failed';
+            
+            // Update sync stats in database
+            $syncSettings->updateSyncStats($status, $totalImported);
+            
             CLI::write("Sync completed! {$totalImported} records imported.", 'green');
             
             // Log the sync
             log_message('info', "Cron sync completed: {$totalImported} records imported");
             
         } catch (\Exception $e) {
+            // Update sync stats with error
+            $syncSettings->updateSyncStats('failed', 0);
+            
             CLI::write('Sync failed: ' . $e->getMessage(), 'red');
             log_message('error', 'Cron sync failed: ' . $e->getMessage());
         }
