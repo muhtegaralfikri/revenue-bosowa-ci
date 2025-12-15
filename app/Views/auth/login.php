@@ -111,6 +111,30 @@
             border-radius: 1.25rem;
             box-shadow: 0 20px 40px -35px rgba(15, 23, 42, 0.45);
             padding: 2.5rem;
+            position: relative;
+        }
+        
+        .back-to-home {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-color);
+            color: #fff;
+            border-radius: 50%;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .back-to-home:hover {
+            background: #163666;
+            color: #fff;
+            transform: scale(1.05);
         }
         
         .auth-card .card-eyebrow {
@@ -315,6 +339,9 @@
         </div>
         
         <div class="auth-card">
+            <a href="/dashboard" class="back-to-home" title="Kembali ke Beranda">
+                <i class="bi bi-arrow-left"></i>
+            </a>
             <p class="card-eyebrow">Masuk ke akun Anda</p>
             <h2>Login Sistem</h2>
             <p class="card-subtitle">Gunakan kredensial yang diberikan admin untuk mengakses dashboard.</p>
