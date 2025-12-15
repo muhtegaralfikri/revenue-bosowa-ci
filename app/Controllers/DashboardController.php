@@ -148,7 +148,8 @@ class DashboardController extends BaseController
     {
         $dailyRealizations = $this->realizationModel->getDailyRealizations($year, $month);
         
-        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        // Use date('t') instead of cal_days_in_month() - no calendar extension required
+        $daysInMonth = (int) date('t', mktime(0, 0, 0, $month, 1, $year));
         $labels = range(1, $daysInMonth);
 
         $dataByCompany = [];
