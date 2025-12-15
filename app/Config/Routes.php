@@ -7,16 +7,16 @@ use CodeIgniter\Router\RouteCollection;
  */
 
 // Public routes
-$routes->get('/', 'AuthController::login');
+$routes->get('/', 'DashboardController::index');  // Root now goes to dashboard
+$routes->get('/dashboard', 'DashboardController::index');
+$routes->get('/dashboard/debug', 'DashboardController::debug');
+
 $routes->get('/login', 'AuthController::login');
 $routes->post('/login', 'AuthController::attemptLogin');
 $routes->get('/logout', 'AuthController::logout');
 
 // Protected routes (require authentication)
 $routes->group('', ['filter' => 'auth'], function ($routes) {
-    $routes->get('/dashboard', 'DashboardController::index');
-    $routes->get('/dashboard/debug', 'DashboardController::debug');
-    
     // Input Revenue (combined Target & Realisasi)
     $routes->get('/input', 'InputController::index');
     $routes->post('/input/store', 'InputController::store');

@@ -521,11 +521,15 @@
         </a>
         
         <nav class="nav-menu desktop-menu">
-            <a href="/dashboard" class="<?= uri_string() == 'dashboard' ? 'active' : '' ?>">Beranda</a>
-            <a href="/input" class="<?= str_starts_with(uri_string(), 'input') ? 'active' : '' ?>">Input</a>
-            <a href="/users" class="<?= str_starts_with(uri_string(), 'users') ? 'active' : '' ?>">Users</a>
-            <a href="/sync" class="<?= str_starts_with(uri_string(), 'sync') ? 'active' : '' ?>">Sync</a>
-            <a href="/logout">Log Out</a>
+            <a href="/dashboard" class="<?= uri_string() == 'dashboard' || uri_string() == '' ? 'active' : '' ?>">Beranda</a>
+            <?php if (session()->get('logged_in')): ?>
+                <a href="/input" class="<?= str_starts_with(uri_string(), 'input') ? 'active' : '' ?>">Input</a>
+                <a href="/users" class="<?= str_starts_with(uri_string(), 'users') ? 'active' : '' ?>">Users</a>
+                <a href="/sync" class="<?= str_starts_with(uri_string(), 'sync') ? 'active' : '' ?>">Sync</a>
+                <a href="/logout">Log Out</a>
+            <?php else: ?>
+                <a href="/login">Login</a>
+            <?php endif; ?>
         </nav>
         
         <!-- Mobile Menu Button -->
@@ -546,27 +550,35 @@
             </button>
         </div>
         <div class="slide-menu-nav">
-            <a href="/dashboard" class="<?= uri_string() == 'dashboard' ? 'active' : '' ?>">
+            <a href="/dashboard" class="<?= uri_string() == 'dashboard' || uri_string() == '' ? 'active' : '' ?>">
                 <i class="bi bi-house"></i>
                 <span>Beranda</span>
             </a>
-            <a href="/input" class="<?= str_starts_with(uri_string(), 'input') ? 'active' : '' ?>">
-                <i class="bi bi-plus-circle"></i>
-                <span>Input Revenue</span>
-            </a>
-            <a href="/users" class="<?= str_starts_with(uri_string(), 'users') ? 'active' : '' ?>">
-                <i class="bi bi-people"></i>
-                <span>Users</span>
-            </a>
-            <a href="/sync" class="<?= str_starts_with(uri_string(), 'sync') ? 'active' : '' ?>">
-                <i class="bi bi-cloud-download"></i>
-                <span>Sync Data</span>
-            </a>
-            <div class="slide-menu-divider"></div>
-            <a href="/logout">
-                <i class="bi bi-box-arrow-right"></i>
-                <span>Log Out</span>
-            </a>
+            <?php if (session()->get('logged_in')): ?>
+                <a href="/input" class="<?= str_starts_with(uri_string(), 'input') ? 'active' : '' ?>">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Input Revenue</span>
+                </a>
+                <a href="/users" class="<?= str_starts_with(uri_string(), 'users') ? 'active' : '' ?>">
+                    <i class="bi bi-people"></i>
+                    <span>Users</span>
+                </a>
+                <a href="/sync" class="<?= str_starts_with(uri_string(), 'sync') ? 'active' : '' ?>">
+                    <i class="bi bi-cloud-download"></i>
+                    <span>Sync Data</span>
+                </a>
+                <div class="slide-menu-divider"></div>
+                <a href="/logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Log Out</span>
+                </a>
+            <?php else: ?>
+                <div class="slide-menu-divider"></div>
+                <a href="/login">
+                    <i class="bi bi-box-arrow-in-right"></i>
+                    <span>Login</span>
+                </a>
+            <?php endif; ?>
         </div>
     </nav>
     
