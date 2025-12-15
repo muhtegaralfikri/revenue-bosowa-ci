@@ -68,6 +68,9 @@ class DashboardController extends BaseController
         // Get daily trend data
         $dailyData = $this->getDailyTrendData($year, $month, $companies);
 
+        // Get monthly target data for comparison chart
+        $monthlyTargetData = $this->getMonthlyTargetData($year, $companies);
+
         $data = [
             'title' => 'Dashboard',
             'year' => $year,
@@ -79,6 +82,7 @@ class DashboardController extends BaseController
             'totalPercentage' => $totalTarget > 0 ? ($totalRealization / $totalTarget) * 100 : 0,
             'monthlyData' => $monthlyData,
             'dailyData' => $dailyData,
+            'monthlyTargetData' => $monthlyTargetData,
             'years' => range(date('Y') - 2, date('Y') + 1),
             'months' => [
                 1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
@@ -183,5 +187,32 @@ class DashboardController extends BaseController
             'labels' => $labels,
             'datasets' => $datasets,
         ];
+    }
+
+    private function getMonthlyTargetData($year, $companies)
+    {
+        $targets = $this->targetModel->getTargetsByYear($year);
+        
+        // Organize targets by company code and month
+        $targetsByCompany = [];
+        foreach ($companies as $company) {
+            $targetsByCompany[$company['code']] = array_fill(1, 12, 0);
+        }
+        
+        foreach ($targets as $target) {
+            $companyCode = $target['code'];
+            $month = (int) $target['month'];
+            if (isset($targetsByCompany[$companyCode])) {
+                $targetsByCompany[$companyCode][$month] = (float) $target['target_amount'];
+            }
+        }
+        
+        // Convert to array indexed from 0-11 for JavaScript
+        $result = [];
+        foreach ($targetsByCompany as $code => $months) {
+            $result[$code] = array_values($months);
+        }
+        
+        return $result;
     }
 }

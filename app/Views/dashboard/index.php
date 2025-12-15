@@ -267,6 +267,7 @@ const dailyChart = new Chart(dailyCtx, {
 
 // Monthly Comparison Data
 const monthlyData = <?= json_encode($monthlyData) ?>;
+const monthlyTargetData = <?= json_encode($monthlyTargetData) ?>;
 const comparisonCtx = document.getElementById('comparisonChart').getContext('2d');
 
 // Calculate combined target and realisasi
@@ -276,6 +277,7 @@ function getComparisonData(companyCode = null) {
     if (companyCode) {
         // Filter by specific company
         const dataset = monthlyData.datasets.find(ds => ds.label === companyCode);
+        const targetData = monthlyTargetData[companyCode] || Array(12).fill(0);
         if (!dataset) return null;
         
         return {
@@ -283,7 +285,7 @@ function getComparisonData(companyCode = null) {
             datasets: [
                 {
                     label: 'Target',
-                    data: Array(12).fill(0), // We don't have target data in monthlyData
+                    data: targetData,
                     backgroundColor: 'rgba(59, 130, 246, 0.5)',
                     borderColor: 'rgba(59, 130, 246, 1)',
                     borderWidth: 1,
@@ -301,9 +303,18 @@ function getComparisonData(companyCode = null) {
     
     // Combine all companies
     const combinedRealisasi = Array(12).fill(0);
+    const combinedTarget = Array(12).fill(0);
+    
     monthlyData.datasets.forEach(ds => {
         ds.data.forEach((val, idx) => {
             combinedRealisasi[idx] += parseFloat(val) || 0;
+        });
+    });
+    
+    // Sum all company targets
+    Object.values(monthlyTargetData).forEach(targets => {
+        targets.forEach((val, idx) => {
+            combinedTarget[idx] += parseFloat(val) || 0;
         });
     });
     
@@ -312,7 +323,7 @@ function getComparisonData(companyCode = null) {
         datasets: [
             {
                 label: 'Target',
-                data: Array(12).fill(0),
+                data: combinedTarget,
                 backgroundColor: 'rgba(59, 130, 246, 0.5)',
                 borderColor: 'rgba(59, 130, 246, 1)',
                 borderWidth: 1,
