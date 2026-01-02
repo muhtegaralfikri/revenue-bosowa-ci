@@ -156,12 +156,14 @@ class GoogleSheetsService
             $results['details']['sheets'] = $sheetNames;
             
             foreach ($sheetNames as $sheetName) {
-                // Process REVENUE sheet (like NestJS)
-                if (strtoupper($sheetName) === 'REVENUE 2025') {
+                // Process REVENUE sheets (REVENUE 2025, REVENUE 2026, etc.)
+                if (preg_match('/^REVENUE\s+(\d{4})$/i', $sheetName, $matches)) {
+                    $sheetYear = (int) $matches[1];
                     $worksheet = $spreadsheet->getSheetByName($sheetName);
-                    $parseResult = $this->parseRevenueSheet($worksheet);
+                    $parseResult = $this->parseRevenueSheet($worksheet, $sheetYear);
                     $results['details'][] = [
                         'sheet' => $sheetName,
+                        'year' => $sheetYear,
                         'imported' => $parseResult['count'],
                         'debug' => $parseResult['debug'] ?? [],
                     ];
@@ -325,7 +327,7 @@ class GoogleSheetsService
         return $result;
     }
 
-    protected function parseRevenueSheet($worksheet): array
+    protected function parseRevenueSheet($worksheet, int $year = null): array
     {
         $result = ['count' => 0, 'debug' => []];
         $data = $worksheet->toArray();
@@ -367,7 +369,7 @@ class GoogleSheetsService
         $colHeaderRow = $data[$columnHeaderRow];
         $monthColumns = [];
         $mappedMonths = [];
-        $currentYear = (int) date('Y');
+        $currentYear = $year ?? (int) date('Y');
 
         for ($col = 0; $col < count($colHeaderRow); $col++) {
             $colHeader = strtoupper(trim($colHeaderRow[$col] ?? ''));
