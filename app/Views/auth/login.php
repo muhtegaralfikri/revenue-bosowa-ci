@@ -381,8 +381,13 @@
                 
                 <div class="form-field">
                     <label for="password">Password</label>
-                    <input type="password" class="form-control" id="password" name="password" 
-                           placeholder="Masukkan password" required>
+                    <div class="position-relative">
+                        <input type="password" class="form-control" id="password" name="password" 
+                               placeholder="Masukkan password" required style="padding-right: 40px;">
+                        <span class="position-absolute top-50 end-0 translate-middle-y me-3" id="togglePassword" style="cursor: pointer;">
+                            <i class="bi bi-eye-slash"></i>
+                        </span>
+                    </div>
                 </div>
                 
                 <button type="submit" class="btn btn-primary w-100">
@@ -405,6 +410,25 @@
             if (e.key === 'Enter') {
                 e.preventDefault();
                 document.getElementById('password').focus();
+            }
+        });
+
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+        const icon = togglePassword.querySelector('i');
+
+        togglePassword.addEventListener('click', function (e) {
+            // toggle the type attribute
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            
+            // toggle the icon
+            if (type === 'password') {
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
             }
         });
     </script>
