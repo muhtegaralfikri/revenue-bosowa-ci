@@ -115,26 +115,20 @@
         }
         
         .back-to-home {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            width: 36px;
-            height: 36px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            justify-content: center;
-            background: var(--primary-color);
-            color: #fff;
-            border-radius: 50%;
+            gap: 0.5rem;
+            color: var(--surface-500);
             text-decoration: none;
-            font-size: 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
             transition: all 0.2s;
         }
         
         .back-to-home:hover {
-            background: #163666;
-            color: #fff;
-            transform: scale(1.05);
+            color: var(--primary-color);
+            transform: translateX(-3px);
         }
         
         .auth-card .card-eyebrow {
@@ -339,8 +333,9 @@
         </div>
         
         <div class="auth-card">
-            <a href="/dashboard" class="back-to-home" title="Kembali ke Beranda">
+            <a href="/" class="back-to-home">
                 <i class="bi bi-arrow-left"></i>
+                <span>Kembali ke Beranda</span>
             </a>
             <p class="card-eyebrow">Masuk ke akun Anda</p>
             <h2>Login Sistem</h2>
