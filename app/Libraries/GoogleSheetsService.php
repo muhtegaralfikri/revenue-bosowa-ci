@@ -97,6 +97,8 @@ class GoogleSheetsService
         curl_setopt_array($ch, [
             CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 60,         // Maximum 60 seconds for download
+            CURLOPT_CONNECTTIMEOUT => 15,  // Maximum 15 seconds to connect
             CURLOPT_HTTPHEADER => [
                 'Authorization: Bearer ' . $this->accessToken,
             ],
@@ -155,7 +157,7 @@ class GoogleSheetsService
             
             foreach ($sheetNames as $sheetName) {
                 // Process REVENUE sheet (like NestJS)
-                if (strtoupper($sheetName) === 'REVENUE') {
+                if (strtoupper($sheetName) === 'REVENUE 2025') {
                     $worksheet = $spreadsheet->getSheetByName($sheetName);
                     $parseResult = $this->parseRevenueSheet($worksheet);
                     $results['details'][] = [
