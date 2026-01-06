@@ -55,13 +55,13 @@ class Filters extends BaseFilters
      */
     public array $required = [
         'before' => [
-            'forcehttps', // Force Global Secure Requests
+            // 'forcehttps', // Force Global Secure Requests - disabled for local dev
             'pagecache',  // Web Page Caching
         ],
         'after' => [
             'pagecache',   // Web Page Caching
-            'performance', // Performance Metrics
-            'toolbar',     // Debug Toolbar
+            // 'performance', // Performance Metrics - disabled for local dev
+            // 'toolbar',     // Debug Toolbar - disabled
         ],
     ];
 
@@ -81,7 +81,7 @@ class Filters extends BaseFilters
             // 'invalidchars',
         ],
         'after' => [
-            'securityheaders', // Add security headers to all responses
+            // 'securityheaders', // Temporarily disable to fix cache issues
             // 'honeypot',
         ],
     ];

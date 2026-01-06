@@ -16,7 +16,11 @@ class AuthController extends BaseController
 
     public function login()
     {
-        if (session()->get('logged_in')) {
+        // Check if already logged in, then close session immediately
+        $isLoggedIn = session()->get('logged_in');
+        session()->close();
+
+        if ($isLoggedIn) {
             return redirect()->to('/dashboard');
         }
 
@@ -60,6 +64,9 @@ class AuthController extends BaseController
                 'logged_in' => true,
             ]);
 
+            // Close session early to prevent blocking
+            session()->close();
+
             log_message('info', "User logged in: {$email} from IP: {$ip}");
             return redirect()->to('/dashboard')->with('success', 'Login berhasil!');
         }
@@ -82,7 +89,8 @@ class AuthController extends BaseController
     {
         $email = session()->get('user_email');
         session()->destroy();
-        
+        session()->close();  // Ensure session is closed
+
         log_message('info', "User logged out: {$email}");
         return redirect()->to('/login')->with('success', 'Logout berhasil.');
     }
