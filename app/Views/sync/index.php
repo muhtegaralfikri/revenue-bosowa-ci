@@ -152,6 +152,38 @@
     .btn-sync.loading .btn-label {
         opacity: 0.8;
     }
+
+    /* Overlay while syncing */
+    .sync-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.35);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1050;
+        backdrop-filter: blur(2px);
+    }
+    .sync-overlay.active {
+        display: flex;
+    }
+    .overlay-box {
+        background: #fff;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+        color: var(--surface-700);
+    }
+    .overlay-box .spinner {
+        width: 22px;
+        height: 22px;
+        border-width: 3px;
+        display: inline-block;
+    }
 </style>
 <?= $this->endSection() ?>
 
@@ -213,6 +245,13 @@
     </div>
 </div>
 
+<div class="sync-overlay" id="syncOverlay" aria-hidden="true">
+    <div class="overlay-box">
+        <span class="spinner"></span>
+        <span>Menyinkronkan data...</span>
+    </div>
+</div>
+
 <?= $this->endSection() ?>
 
 <?= $this->section('scripts') ?>
@@ -229,6 +268,10 @@
         btn.disabled = true;
         btn.classList.add('loading');
         if (label) label.innerHTML = '<i class="bi bi-arrow-repeat"></i> Syncing...';
+        const overlay = document.getElementById('syncOverlay');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
     });
 })();
 </script>
