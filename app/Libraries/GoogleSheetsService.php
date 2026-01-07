@@ -72,6 +72,9 @@ class GoogleSheetsService
             throw new \Exception("Invalid credentials format. Missing client_email or private_key.");
         }
 
+        // Enable SSL verification in production; allow opt-out via env for debugging
+        $verifySsl = env('google.sheets.verify_ssl', ENVIRONMENT === 'production');
+
         $now = time();
         $payload = [
             'iss' => $credentials['client_email'],
@@ -97,8 +100,8 @@ class GoogleSheetsService
             ]),
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
-            CURLOPT_SSL_VERIFYPEER => ENVIRONMENT === 'production', // Disable SSL verification for development
-            CURLOPT_SSL_VERIFYHOST => ENVIRONMENT === 'production', // Disable SSL verification for development
+            CURLOPT_SSL_VERIFYPEER => (bool) $verifySsl, // Disable SSL verification for development/debugging
+            CURLOPT_SSL_VERIFYHOST => $verifySsl ? 2 : 0, // CURLOPT_SSL_VERIFYHOST requires 2 for verification
         ]);
 
         $response = curl_exec($ch);
@@ -127,6 +130,7 @@ class GoogleSheetsService
     {
         // Increase PHP execution time limit for large file downloads
         set_time_limit(300); // 5 minutes
+        $verifySsl = env('google.sheets.verify_ssl', ENVIRONMENT === 'production');
 
         $url = "https://www.googleapis.com/drive/v3/files/{$this->config->spreadsheetId}?alt=media";
 
@@ -141,8 +145,8 @@ class GoogleSheetsService
             CURLOPT_HTTPHEADER => [
                 'Authorization: Bearer ' . $this->accessToken,
             ],
-            CURLOPT_SSL_VERIFYPEER => ENVIRONMENT === 'production', // Disable SSL verification for development
-            CURLOPT_SSL_VERIFYHOST => ENVIRONMENT === 'production', // Disable SSL verification for development
+            CURLOPT_SSL_VERIFYPEER => (bool) $verifySsl, // Disable SSL verification for development/debugging
+            CURLOPT_SSL_VERIFYHOST => $verifySsl ? 2 : 0, // CURLOPT_SSL_VERIFYHOST requires 2 for verification
             CURLOPT_VERBOSE => true, // Enable verbose logging
         ]);
 
