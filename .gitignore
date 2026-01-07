@@ -45,6 +45,9 @@ $RECYCLE.BIN/
 .vagrant
 Vagrantfile
 
+# Google credentials (sensitive)
+writable/google-credentials.json
+
 #-------------------------
 # Temporary Files
 #-------------------------

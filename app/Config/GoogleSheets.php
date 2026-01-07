@@ -16,7 +16,16 @@ class GoogleSheets extends BaseConfig
         parent::__construct();
         
         $this->enabled = env('google.sheets.enabled', false) === 'true' || env('google.sheets.enabled', false) === true;
-        $this->credentialsFile = env('google.sheets.credentials_file', WRITEPATH . 'google-credentials.json');
+        $credentialsPath = env('google.sheets.credentials_file', 'google-credentials.json');
+        
+        // Convert relative path to absolute path
+        if (!is_file($credentialsPath) && strpos($credentialsPath, ':') === false) {
+            // It's a relative path, prepend with WRITEPATH
+            $this->credentialsFile = WRITEPATH . ltrim($credentialsPath, '/\\');
+        } else {
+            $this->credentialsFile = $credentialsPath;
+        }
+        
         $this->spreadsheetId = env('google.spreadsheet.id', '');
         $this->syncInterval = (int) env('google.sheets.sync_interval', 60);
     }
