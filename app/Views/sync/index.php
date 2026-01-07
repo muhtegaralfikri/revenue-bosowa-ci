@@ -14,6 +14,7 @@
         background: #fff;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        max-width: 520px;
     }
     
     .sync-card .card-header {
@@ -82,6 +83,8 @@
         border-radius: 6px;
         cursor: pointer;
         transition: background 0.2s;
+        position: relative;
+        min-width: 190px;
     }
     
     .btn-sync:hover:not(:disabled) {
@@ -105,6 +108,49 @@
         .sync-icon {
             font-size: 3rem;
         }
+        
+        .sync-card {
+            margin: 0 0.5rem;
+        }
+    }
+
+    /* Debug box to prevent horizontal scroll on mobile */
+    .debug-box {
+        margin-top: 1.5rem;
+        text-align: left;
+        background: #f5f5f5;
+        padding: 1rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        overflow-x: auto;
+        max-width: 100%;
+    }
+    .debug-box pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+    }
+
+    /* Loading spinner */
+    .spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        display: none;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .btn-sync.loading .spinner {
+        display: inline-block;
+    }
+    .btn-sync.loading .btn-label {
+        opacity: 0.8;
     }
 </style>
 <?= $this->endSection() ?>
@@ -149,16 +195,16 @@
             </div>
             <?php endif; ?>
             
-            <form action="/sync/run" method="post">
+            <form action="/sync/run" method="post" id="syncForm">
                 <?= csrf_field() ?>
-                <button type="submit" class="btn-sync" <?= !$enabled ? 'disabled' : '' ?>>
-                    <i class="bi bi-arrow-repeat"></i>
-                    Sync Sekarang
+                <button type="submit" class="btn-sync" id="syncButton" <?= !$enabled ? 'disabled' : '' ?>>
+                    <span class="btn-label"><i class="bi bi-arrow-repeat"></i> Sync Sekarang</span>
+                    <span class="spinner" id="syncSpinner" aria-hidden="true"></span>
                 </button>
             </form>
             
             <?php if (ENVIRONMENT === 'development' && session()->getFlashdata('debug')): ?>
-            <div style="margin-top: 1.5rem; text-align: left; background: #f5f5f5; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto;">
+            <div class="debug-box">
                 <strong>Debug Info:</strong>
                 <pre><?= print_r(session()->getFlashdata('debug'), true) ?></pre>
             </div>
@@ -167,4 +213,23 @@
     </div>
 </div>
 
+<?= $this->endSection() ?>
+
+<?= $this->section('scripts') ?>
+<script>
+(function() {
+    const form = document.getElementById('syncForm');
+    if (!form) return;
+    const btn = document.getElementById('syncButton');
+    const spinner = document.getElementById('syncSpinner');
+    const label = btn ? btn.querySelector('.btn-label') : null;
+
+    form.addEventListener('submit', function() {
+        if (!btn) return;
+        btn.disabled = true;
+        btn.classList.add('loading');
+        if (label) label.innerHTML = '<i class="bi bi-arrow-repeat"></i> Syncing...';
+    });
+})();
+</script>
 <?= $this->endSection() ?>
