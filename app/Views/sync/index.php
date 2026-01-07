@@ -146,6 +146,11 @@
         to { transform: rotate(360deg); }
     }
 
+    .spinner-icon {
+        display: inline-block;
+        animation: spin 1s linear infinite;
+    }
+
     .btn-sync.loading .spinner {
         display: inline-block;
     }
@@ -153,36 +158,30 @@
         opacity: 0.8;
     }
 
-    /* Overlay while syncing */
-    .sync-overlay {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.35);
+
+
+    /* Inline loading text below button */
+    .inline-loading {
         display: none;
+        margin-top: 1.5rem;
+        color: var(--surface-600);
+        font-weight: 500;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        z-index: 1050;
-        backdrop-filter: blur(2px);
-    }
-    .sync-overlay.active {
-        display: flex;
-    }
-    .overlay-box {
-        background: #fff;
-        padding: 1rem 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        display: flex;
-        align-items: center;
         gap: 0.75rem;
-        font-weight: 600;
-        color: var(--surface-700);
     }
-    .overlay-box .spinner {
-        width: 22px;
-        height: 22px;
-        border-width: 3px;
+    .inline-loading.active {
+        display: flex;
+    }
+    .inline-loading .spinner {
         display: inline-block;
+        width: 24px;
+        height: 24px;
+        border: 2px solid var(--surface-200);
+        border-top-color: var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
     }
 </style>
 <?= $this->endSection() ?>
@@ -234,6 +233,10 @@
                     <span class="spinner" id="syncSpinner" aria-hidden="true"></span>
                 </button>
             </form>
+            <div class="inline-loading" id="inlineLoading">
+                <span class="spinner" aria-hidden="true"></span>
+                <span>Menyinkronkan data...</span>
+            </div>
             
             <?php if (ENVIRONMENT === 'development' && session()->getFlashdata('debug')): ?>
             <div class="debug-box">
@@ -245,12 +248,7 @@
     </div>
 </div>
 
-<div class="sync-overlay" id="syncOverlay" aria-hidden="true">
-    <div class="overlay-box">
-        <span class="spinner"></span>
-        <span>Menyinkronkan data...</span>
-    </div>
-</div>
+
 
 <?= $this->endSection() ?>
 
@@ -262,16 +260,15 @@
     const btn = document.getElementById('syncButton');
     const spinner = document.getElementById('syncSpinner');
     const label = btn ? btn.querySelector('.btn-label') : null;
+    const inlineLoading = document.getElementById('inlineLoading');
 
     form.addEventListener('submit', function() {
         if (!btn) return;
         btn.disabled = true;
         btn.classList.add('loading');
-        if (label) label.innerHTML = '<i class="bi bi-arrow-repeat"></i> Syncing...';
-        const overlay = document.getElementById('syncOverlay');
-        if (overlay) {
-            overlay.classList.add('active');
-        }
+        if (label) label.innerHTML = '<i class="bi bi-arrow-repeat spinner-icon"></i> Syncing...';
+        if (inlineLoading) inlineLoading.classList.add('active');
+
     });
 })();
 </script>
