@@ -217,34 +217,50 @@ class GoogleSheetsService
             $sheetNames = $spreadsheet->getSheetNames();
             $results['details']['sheets'] = $sheetNames;
             
+            // 1. Process REVENUE summary sheets (REVENUE 2025, REVENUE 2026, etc.)
             foreach ($sheetNames as $sheetName) {
-                // Process REVENUE sheets (REVENUE 2025, REVENUE 2026, etc.)
                 if (preg_match('/^REVENUE\s+(\d{4})$/i', $sheetName, $matches)) {
                     $sheetYear = (int) $matches[1];
                     $worksheet = $spreadsheet->getSheetByName($sheetName);
 
-                    // For 2026+, try breakdown by month first, fallback to keyword search
                     if ($sheetYear >= 2026) {
-                        // Try breakdown by month first (like 2025 format)
                         $parseResult = $this->parseRevenueSheet($worksheet, $sheetYear, $sheetName);
-
-                        // If no records found (no monthly breakdown data), fallback to keyword search
                         if ($parseResult['count'] === 0) {
-                            $parseResult['debug'][] = 'No monthly breakdown found, falling back to keyword search for total annual revenue';
                             $parseResult = $this->parseRevenueSheetByKeyword($worksheet, $sheetYear);
                         }
                     } else {
-                        // 2025 and below: always use breakdown by month
                         $parseResult = $this->parseRevenueSheet($worksheet, $sheetYear);
                     }
 
                     $results['details'][] = [
                         'sheet' => $sheetName,
-                        'year' => $sheetYear,
+                        'type' => 'summary',
                         'imported' => $parseResult['count'],
                         'debug' => $parseResult['debug'] ?? [],
                     ];
                     $totalImported += $parseResult['count'];
+                }
+            }
+
+            // 2. Process individual daily company sheets (e.g. BBI, BBA, JAPELIN, BBI 2026, BBA 2026, JAPELIN 2026)
+            foreach ($sheetNames as $sheetName) {
+                $companyCode = null;
+                if (preg_match('/^(BBI|BBA|JAPELIN)(?:\s+(\d{4}))?$/i', trim($sheetName), $matches)) {
+                    $companyCode = strtoupper($matches[1]);
+                }
+
+                if ($companyCode) {
+                    $worksheet = $spreadsheet->getSheetByName($sheetName);
+                    $parseResult = $this->parseDailyCompanySheet($worksheet, $companyCode);
+                    if ($parseResult['count'] > 0) {
+                        $results['details'][] = [
+                            'sheet' => $sheetName,
+                            'type' => 'daily',
+                            'imported' => $parseResult['count'],
+                            'debug' => $parseResult['debug'] ?? [],
+                        ];
+                        $totalImported += $parseResult['count'];
+                    }
                 }
             }
 
@@ -267,7 +283,11 @@ class GoogleSheetsService
 
     protected function clearOldGoogleSheetsData(): void
     {
-        $this->realizationModel->where('description', 'Google Sheets Sync')->delete();
+        $this->realizationModel->whereIn('description', [
+            'Google Sheets Sync',
+            'Google Sheets Sync Summary',
+            'Google Sheets Sync Daily'
+        ])->delete();
     }
 
     protected function parseCompanySheet($worksheet, array $company): array
@@ -546,7 +566,19 @@ class GoogleSheetsService
                 continue;
             }
 
-            $targetCode = $afterBbi ? 'GRAND' : $currentBlock;
+            $targetCode = $currentBlock;
+            if ($afterBbi) {
+                if (str_contains($cellA, 'BBI') || str_contains($cellB, 'BBI')) {
+                    $targetCode = 'BBI';
+                } elseif (str_contains($cellA, 'BBA') || str_contains($cellB, 'BBA')) {
+                    $targetCode = 'BBA';
+                } elseif (str_contains($cellA, 'JAPELIN') || str_contains($cellB, 'JAPELIN')) {
+                    $targetCode = 'JAPELIN';
+                } else {
+                    $targetCode = 'GRAND';
+                }
+            }
+
             if (!$targetCode) {
                 continue;
             }
@@ -586,7 +618,7 @@ class GoogleSheetsService
                 'company_id' => $company['id'],
                 'date' => $entryDate,
                 'amount' => $totalAmount,
-                'description' => 'Google Sheets Sync',
+                'description' => 'Google Sheets Sync Summary',
             ]);
             $result['count']++;
         }
@@ -926,7 +958,7 @@ class GoogleSheetsService
                             'company_id' => $companyId,
                             'date' => $entryDate,
                             'amount' => $amount,
-                            'description' => 'Google Sheets Sync',
+                            'description' => 'Google Sheets Sync Summary',
                         ]);
                         $result['debug'][] = "Row $rowIndex: Inserted $columnB (ID: $companyId) with amount: " . number_format($amount, 0, ',', '.');
                     }
@@ -938,6 +970,164 @@ class GoogleSheetsService
 
         $result['debug']['matchedKeywords'] = $matchedKeywords;
         $result['debug']['totalMatched'] = count($matchedKeywords);
+
+        return $result;
+    }
+
+    protected function parseIndonesianDate(string $cellDate): ?int
+    {
+        if (empty($cellDate)) return null;
+
+        // Quick check with strtotime first
+        $ts = strtotime($cellDate);
+        if ($ts && (int) date('Y', $ts) >= 2020) {
+            return $ts;
+        }
+
+        // Map Indonesian month names to English
+        $indoMonths = [
+            'januari' => 'january', 'jan' => 'january',
+            'februari' => 'february', 'feb' => 'february',
+            'maret' => 'march', 'mar' => 'march',
+            'april' => 'april', 'apr' => 'april',
+            'mei' => 'may',
+            'juni' => 'june', 'jun' => 'june',
+            'juli' => 'july', 'jul' => 'july',
+            'agustus' => 'august', 'agu' => 'august', 'agt' => 'august',
+            'september' => 'september', 'sep' => 'september',
+            'oktober' => 'october', 'okt' => 'october',
+            'november' => 'november', 'nov' => 'november',
+            'desember' => 'december', 'des' => 'december',
+        ];
+
+        $normalized = strtolower(trim($cellDate));
+        foreach ($indoMonths as $indo => $eng) {
+            if (str_contains($normalized, $indo)) {
+                $normalizedEng = str_replace($indo, $eng, $normalized);
+                $ts = strtotime($normalizedEng);
+                if ($ts && (int) date('Y', $ts) >= 2020) {
+                    return $ts;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    protected function parseDailyCompanySheet($worksheet, string $companyCode): array
+    {
+        $result = ['count' => 0, 'debug' => []];
+        $data = $worksheet->toArray();
+
+        $companies = $this->companyModel->getActiveCompanies();
+        $companyMap = [];
+        foreach ($companies as $comp) {
+            $companyMap[strtoupper($comp['code'])] = $comp['id'];
+        }
+
+        $companyId = $companyMap[strtoupper($companyCode)] ?? null;
+        if (!$companyId) {
+            $result['debug']['error'] = "Company not found for code: {$companyCode}";
+            return $result;
+        }
+
+        // 1. Find Header Row and identify column indices strictly for "REVENUE"
+        $revenueColIndices = [];
+        $headerRowIndex = -1;
+
+        for ($i = 0; $i < min(15, count($data)); $i++) {
+            $row = $data[$i];
+            if (!$row) continue;
+
+            foreach ($row as $colIdx => $cell) {
+                $cellStr = strtoupper(trim((string) $cell));
+                if ($cellStr === 'REVENUE' || str_contains($cellStr, 'REVENUE')) {
+                    if (str_contains($cellStr, 'TOTAL REVENUE')) {
+                        continue;
+                    }
+                    $revenueColIndices[] = $colIdx;
+                    $headerRowIndex = $i;
+                }
+            }
+            if (!empty($revenueColIndices)) {
+                break;
+            }
+        }
+
+        $revenueColIndices = array_values(array_unique($revenueColIndices));
+        $useRevenueHeaderOnly = !empty($revenueColIndices);
+        $result['debug']['revenueColIndices'] = $revenueColIndices;
+        $result['debug']['headerRowIndex'] = $headerRowIndex;
+
+        $dailyTotals = [];
+
+        foreach ($data as $rowIndex => $row) {
+            if (!$row || empty($row[0])) {
+                continue;
+            }
+
+            // Skip header rows
+            if ($headerRowIndex !== -1 && $rowIndex <= $headerRowIndex) {
+                continue;
+            }
+
+            $cellDate = trim((string) $row[0]);
+            
+            // Skip total rows at the bottom
+            if (str_contains(strtoupper($cellDate), 'TOTAL')) {
+                continue;
+            }
+
+            $timestamp = $this->parseIndonesianDate($cellDate);
+            if (!$timestamp) {
+                continue;
+            }
+
+            $year = (int) date('Y', $timestamp);
+            if ($year < 2020) {
+                continue;
+            }
+
+            $formattedDate = date('Y-m-d', $timestamp);
+
+            $rowSum = 0;
+            if ($useRevenueHeaderOnly) {
+                // Sum ONLY columns that have "REVENUE" header
+                foreach ($revenueColIndices as $colIdx) {
+                    $val = $row[$colIdx] ?? null;
+                    $amt = $this->parseAmount($val);
+                    if ($amt > 0) {
+                        $rowSum += $amt;
+                    }
+                }
+            } else {
+                // Fallback if no "REVENUE" header found
+                for ($col = 1; $col < count($row); $col++) {
+                    $val = $row[$col] ?? null;
+                    $amt = $this->parseAmount($val);
+                    if ($amt > 1000) {
+                        $rowSum += $amt;
+                    }
+                }
+            }
+
+            if ($rowSum > 0) {
+                if (!isset($dailyTotals[$formattedDate])) {
+                    $dailyTotals[$formattedDate] = 0;
+                }
+                $dailyTotals[$formattedDate] += $rowSum;
+            }
+        }
+
+        foreach ($dailyTotals as $entryDate => $totalAmount) {
+            $this->realizationModel->insert([
+                'company_id' => $companyId,
+                'date' => $entryDate,
+                'amount' => $totalAmount,
+                'description' => 'Google Sheets Sync Daily',
+            ]);
+            $result['count']++;
+        }
 
         return $result;
     }

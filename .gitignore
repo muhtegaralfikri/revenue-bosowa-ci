@@ -130,3 +130,10 @@ _modules/*
 
 /excel
 /ss
+
+#-------------------------
+# Docker (Local only)
+#-------------------------
+docker-compose*.yml
+Dockerfile*
+.docker/

@@ -32,12 +32,22 @@ class RevenueRealizationModel extends Model
         if ($cached = $this->cache->get($cacheKey)) {
             return $cached;
         }
-        
-        $result = $this->select('company_id, SUM(amount) as total_amount')
-            ->where('YEAR(date)', $year)
+
+        // Check if summary data exists for this year and month
+        $hasSummary = $this->where('YEAR(date)', $year)
             ->where('MONTH(date)', $month)
-            ->groupBy('company_id')
-            ->findAll();
+            ->where('description', 'Google Sheets Sync Summary')
+            ->countAllResults();
+
+        $builder = $this->select('company_id, SUM(amount) as total_amount')
+            ->where('YEAR(date)', $year)
+            ->where('MONTH(date)', $month);
+
+        if ($hasSummary > 0) {
+            $builder->where('description', 'Google Sheets Sync Summary');
+        }
+
+        $result = $builder->groupBy('company_id')->findAll();
             
         $this->cache->save($cacheKey, $result, $this->cacheTTL);
         return $result;
@@ -73,6 +83,7 @@ class RevenueRealizationModel extends Model
             ->join('companies', 'companies.id = revenue_realizations.company_id')
             ->where('YEAR(date)', $year)
             ->where('MONTH(date)', $month)
+            ->where('ci_revenue_realizations.description', 'Google Sheets Sync Daily')
             ->orderBy('date', 'ASC')
             ->findAll();
             
@@ -88,9 +99,18 @@ class RevenueRealizationModel extends Model
             return $cached;
         }
         
-        $results = $this->select('company_id, MONTH(date) as month, SUM(amount) as total')
-            ->where('YEAR(date)', $year)
-            ->groupBy('company_id')
+        $hasSummary = $this->where('YEAR(date)', $year)
+            ->where('description', 'Google Sheets Sync Summary')
+            ->countAllResults();
+
+        $builder = $this->select('company_id, MONTH(date) as month, SUM(amount) as total')
+            ->where('YEAR(date)', $year);
+
+        if ($hasSummary > 0) {
+            $builder->where('description', 'Google Sheets Sync Summary');
+        }
+
+        $results = $builder->groupBy('company_id')
             ->groupBy('MONTH(date)')
             ->findAll();
 
